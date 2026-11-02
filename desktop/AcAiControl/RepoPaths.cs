@@ -7,7 +7,7 @@ internal static class RepoPaths
     // Version affichée à côté du titre. À incrémenter manuellement (V1 -> V2 -> V3 …)
     // à CHAQUE modification du code : l'utilisateur lit ce numéro pour vérifier
     // que son raccourci lance bien la dernière build.
-    public const string Version = "V22";
+    public const string Version = "V23";
 
     public static string Root { get; } = FindRoot();
 

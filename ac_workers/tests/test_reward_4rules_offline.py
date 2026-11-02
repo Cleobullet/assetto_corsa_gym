@@ -82,4 +82,22 @@ res = tracker.update(
 print("5. tour fauté      : completed=%s (attendu False)" % res["completed_clean_lap"])
 assert res["completed_clean_lap"] is False, res
 
-print("\nOK: 4 règles vérifiées (progression, temps, collision, tour) + anti-exploitation.")
+# 6. Écart à la ligne de course (anti longe-mur) : pénalité = coef * |gap| (plafonnée).
+cfg_gap = SimpleNamespace(
+    reward_progress_per_m=0.10, reward_time_per_sec=0.02, reward_collision_penalty=10.0,
+    reward_gap_penalty_coef=0.05, reward_gap_penalty_cap=0.5,
+)
+prev = st(0.0, 0.0, 0.0, 0.0, 10.0)
+cur_on_line = st(0.001, 1.0, 10.0, 0.0, 10.0)
+cur_on_line["gap"] = 0.0
+cur_wall = st(0.001, 1.0, 10.0, 0.0, 10.0)
+cur_wall["gap"] = 6.0
+r_line = progress_reward(prev, cur_on_line, TRACK, cfg_gap, z)
+r_wall = progress_reward(prev, cur_wall, TRACK, cfg_gap, z)
+print("6. sur la ligne    : reward=%.4f gap_penalty=%.4f" % (r_line["reward"], r_line["reward_gap_penalty"]))
+print("6. longe-mur 6 m   : reward=%.4f gap_penalty=%.4f (attendu -0.30)" % (r_wall["reward"], r_wall["reward_gap_penalty"]))
+assert r_line["reward_gap_penalty"] == 0.0, r_line
+assert abs(r_wall["reward_gap_penalty"] - (-0.30)) < 1e-9, r_wall
+assert r_wall["reward"] < r_line["reward"], (r_wall, r_line)
+
+print("\nOK: 4 règles vérifiées (progression, temps, collision, tour) + anti-exploitation + écart ligne.")

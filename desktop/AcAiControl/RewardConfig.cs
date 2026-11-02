@@ -22,6 +22,8 @@ internal static class RewardConfig
         ("reward_time_per_sec", "Coût du temps / s", false),
         ("reward_collision_penalty", "Pénalité collision / sortie", false),
         ("reward_clean_lap_bonus", "Bonus tour propre", false),
+        ("reward_gap_penalty_coef", "Pénalité écart ligne / m", false),
+        ("reward_gap_penalty_cap", "Plafond pénalité écart", false),
     };
 
     public static List<RewardField> Load()

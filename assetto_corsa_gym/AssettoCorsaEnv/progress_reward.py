@@ -158,6 +158,19 @@ def progress_reward(previous, state, track_length, config, actions_diff, tracker
     # Règle 3 : collision invalidante / sortie de piste (terminal).
     crash_done = bool(state.get("done")) and str(state.get("done_reason") or "") == "out_of_track"
     terminal = float(getattr(config, "reward_collision_penalty", 10.0)) if crash_done else 0.0
+    # Règle 5 : écart à la ligne de course — anti « longe-mur ». L'IA avait trouvé
+    # l'exploit de longer le mur à fond (progression rapide, aucune pénalité) : on
+    # pénalise la distance latérale à la ligne de course.
+    try:
+        abs_gap = abs(float(state.get("gap", 0.0) or 0.0))
+    except (TypeError, ValueError):
+        abs_gap = 0.0
+    if not math.isfinite(abs_gap):
+        abs_gap = 0.0
+    gap_penalty = min(
+        float(getattr(config, "reward_gap_penalty_coef", 0.05)) * abs_gap,
+        float(getattr(config, "reward_gap_penalty_cap", 0.5)),
+    )
     # Règle 4 : tour complet valide.
     milestones = {
         "reward_clean_sector": 0.0,
@@ -169,7 +182,7 @@ def progress_reward(previous, state, track_length, config, actions_diff, tracker
     if tracker is not None:
         milestones = tracker.update(state, progress, valid, track_length)
 
-    reward = movement - time_cost - terminal + float(milestones.get("reward_clean_lap", 0.0))
+    reward = movement - time_cost - terminal - gap_penalty + float(milestones.get("reward_clean_lap", 0.0))
 
     return {
         "reward": reward,
@@ -178,5 +191,6 @@ def progress_reward(previous, state, track_length, config, actions_diff, tracker
         "progress_valid": bool(valid),
         "reward_time_cost": -time_cost,
         "reward_collision_penalty": -terminal,
+        "reward_gap_penalty": -gap_penalty,
         **milestones,
     }

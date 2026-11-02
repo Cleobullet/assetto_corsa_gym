@@ -133,8 +133,8 @@ AssettoCorsa:
   no_progress_credit_m: 2.0
   moved_speed_kmh: 8.0
   reward_v3: True
-  reward_gap_penalty_coef: 0.03
-  reward_gap_penalty_cap: 0.3
+  reward_gap_penalty_coef: 0.05
+  reward_gap_penalty_cap: 0.5
   reward_steer_penalty_coef: 0.01
   reward_oot_terminal_penalty: 2
   reward_idle_penalty: 0.08
