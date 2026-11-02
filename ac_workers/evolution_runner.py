@@ -147,6 +147,13 @@ def run_evolution(
             status = _read_worker_status(w)
             if status is not None and status.get("neuroevolution_candidate") == runner.assignment.get(w):
                 pending_load.discard(w)
+            else:
+                # Le load_candidate a échoué (timeout diagnostic intermittent) : on
+                # réessaie au lieu de laisser le worker figé en pending_load à jamais
+                # (ce qui gelait la génération à 119/120, vu 2026-11-02).
+                cand = runner.assignment.get(w)
+                if cand is not None:
+                    _send_load_candidate(w, cand)
         # Collecte les scores des candidats déjà évalués + assigne la suite.
         for w in list(runner.assignment.keys()):
             if w in pending_load:
