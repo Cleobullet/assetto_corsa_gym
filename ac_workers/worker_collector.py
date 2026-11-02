@@ -31,7 +31,6 @@ from AssettoCorsaEnv.ac_worker_runtime import apply_worker_env, load_worker_conf
 from ac_workers.collector_diag import CollectorDiagServer
 from ac_workers.collector_shutdown import clear_collector_shutdown, collector_shutdown_requested
 from ac_workers.collector_resume import clear_collector_resume, collector_resume_requested
-from ac_workers.reward_search_drive import search_drive_active
 from ac_workers.drive_truth import (
     REASON_VJOY_NOT_REACHING_CAR,
     is_gas_without_movement,
@@ -412,9 +411,7 @@ class CollectorRuntime:
         if self._policy_paused:
             return "manual_pause"
         if self.learner_required and not self._learner_active and self.evaluation is None:
-            # A reward search drives the saved model without training.
-            if not search_drive_active():
-                return "learner_not_running"
+            return "learner_not_running"
         return ""
 
     def set_phase(self, phase: str, error: str = "") -> None:
@@ -1632,9 +1629,6 @@ def run_collector(worker_id: int, dry_run: bool = False) -> int:
                     runtime._policy_paused = False
                     runtime._started = True
                     clear_collector_resume(worker_id)
-                if search_drive_active():
-                    runtime._policy_paused = False
-                    runtime._started = True
                 if heartbeat_stop.wait(0.5):
                     break
 
