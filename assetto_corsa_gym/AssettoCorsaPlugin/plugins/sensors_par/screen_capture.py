@@ -10,7 +10,15 @@ import datetime
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-from dual_buffer import GrabberSharedMemoryDualBuffer
+try:
+    _pkg = globals().get('__package__')
+    if _pkg:
+        from . import local_import
+    else:
+        raise ImportError
+except (ImportError, SystemError):
+    import local_import
+GrabberSharedMemoryDualBuffer = local_import.import_sibling('dual_buffer').GrabberSharedMemoryDualBuffer
 
 def move_window(window_title="Assetto Corsa", x=0, y=0):
     """
@@ -18,7 +26,7 @@ def move_window(window_title="Assetto Corsa", x=0, y=0):
     """
     hwnd = win32gui.FindWindow(None, window_title)
     if not hwnd:
-        logger.error(f"Window '{window_title}' not found.")
+        logger.error("Window '{0}' not found.".format(window_title))
         return False
 
     rect = win32gui.GetWindowRect(hwnd)
@@ -26,7 +34,7 @@ def move_window(window_title="Assetto Corsa", x=0, y=0):
     height = rect[3] - rect[1]
 
     win32gui.MoveWindow(hwnd, x, y, width, height, True)
-    logger.info(f"Moved '{window_title}' to ({x},{y}).")
+    logger.info("Moved '{0}' to ({1},{2}).".format(window_title, x, y))
     return True
 
 
@@ -36,7 +44,7 @@ def get_client_area(window_title="Assetto Corsa"):
     """
     hwnd = win32gui.FindWindow(None, window_title)
     if not hwnd:
-        logger.error(f"Window '{window_title}' not found.")
+        logger.error("Window '{0}' not found.".format(window_title))
         return None
 
     rect = win32gui.GetClientRect(hwnd)
@@ -90,7 +98,8 @@ def capture_and_process(
             # OpenCV uses BGR by default
             processed = img
         else:
-            logger.exception(f"Invalid color_mode. Choose 'gray' or 'bgr'. Got: {color_mode}")
+            logger.exception(
+                "Invalid color_mode. Choose 'gray' or 'bgr'. Got: {0}".format(color_mode))
             return None, None
 
         final_image = cv2.resize(processed, (shm_image_width, shm_image_height), interpolation=cv2.INTER_LINEAR)
@@ -99,10 +108,10 @@ def capture_and_process(
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            filename = os.path.join(save_path, f"capture_{timestamp}.png")
+            filename = os.path.join(save_path, "capture_{0}.png".format(timestamp))
             cv2.imwrite(filename, final_image)
             if verbose:
-                logger.info(f"Screenshot saved: {os.path.abspath(filename)}")
+                logger.info("Screenshot saved: {0}".format(os.path.abspath(filename)))
 
         total_time = time.time() - start_time
         if verbose:
@@ -132,13 +141,14 @@ def main():
                                                    color_mode=config.color_mode)
         shm_buffer.write_image(image.tobytes())
     except Exception as e:
-        logger.exception(f"Error writing image to shared memory: {e}")
+        logger.exception("Error writing image to shared memory: {0}".format(e))
 
     logger.info("Image written to shared memory.")
 
     # Read back and display image from shared memory
     active_index, shm_img_bytes, img_array = shm_buffer.get_active_image()
-    logger.info(f"Active buffer index: {active_index}, image size: {len(shm_img_bytes)} bytes")
+    logger.info(
+        "Active buffer index: {0}, image size: {1} bytes".format(active_index, len(shm_img_bytes)))
     cv2.imshow("Shared Memory Image", img_array)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

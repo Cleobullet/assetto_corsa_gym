@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../AcAiControl/SettingsConfig.cs" Link="SettingsConfig.cs" />
+    <Compile Include="../AcAiControl/RewardConfig.cs" Link="RewardConfig.cs" />
+    <Compile Include="../AcAiControl/ConfigFiles.cs" Link="ConfigFiles.cs" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+  </ItemGroup>
+</Project>

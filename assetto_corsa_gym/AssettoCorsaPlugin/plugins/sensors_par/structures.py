@@ -9,8 +9,11 @@ import struct
 from operator import itemgetter
 import sys
 
-sys.path.insert(0, "C:\\Program Files (x86)\\Steam\\steamapps\\common\\assettocorsa\\system\\x64\\DLLs")
-sys.path.insert(0, "C:\\Program Files (x86)\\Steam\\steamapps\\common\\assettocorsa\\system\\x64\\Lib")
+_ac_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+for _sub in ('DLLs', 'Lib'):
+    _path = os.path.join(_ac_root, 'system', 'x64', _sub)
+    if os.path.isdir(_path) and _path not in sys.path:
+        sys.path.insert(0, _path)
 from sim_info import info
 
 import logging
@@ -58,9 +61,20 @@ class Car(dict):
         #self['dist_l'], self['dist_r'], self['dist_fast_lane']  = self.distance_from_lanes(track)
         self['steerAngle']              = ac.getCarState(self.car_id, acsys.CS.Steer)
 
-        self['yaw']                     = -info.physics.heading
-        self['pitch']                   = info.physics.pitch
-        self['roll']                    = info.physics.roll
+        # Per-car only. acpmf_physics heading / numberOfTyresOut are one global
+        # mapping shared by every AC instance, so they can belong to another car.
+        velocity                        = ac.getCarState(self.car_id, acsys.CS.Velocity)
+        self['velocity_x']              = velocity[0]
+        self['velocity_y']              = velocity[1]
+        self['velocity_z']              = velocity[2]
+        if float(self['speed'] or 0.0) >= 0.5:
+            self['yaw'] = math.atan2(velocity[0], velocity[2])
+            self._local_yaw = self['yaw']
+        else:
+            self['yaw'] = float(getattr(self, '_local_yaw', 0.0))
+        self['pitch']                   = 0.0
+        self['roll']                    = 0.0
+        self['telemetry_local']         = 1
 
         #self['realtime_leaderboard_position']    = ac.getCarRealTimeLeaderboardPosition(self.car_id) + 1
         #self['car_id']                  = self.car_id
@@ -76,21 +90,20 @@ class Car(dict):
         self["iLastTime"]               = info.graphics.iLastTime
         self["completedLaps"]           = info.graphics.completedLaps
 
-        # new
-        self["numberOfTyresOut"]        = info.physics.numberOfTyresOut
-        self["isInPit"]                 = info.graphics.isInPit
-        self["penaltyTime"]             = info.graphics.penaltyTime
+        # Shared-memory tyres-out is not per-car. Do not copy LapInvalidated:
+        # that flag stays true for the rest of the lap after a kerb.
+        self["numberOfTyresOut"]        = 0
+        self["isInPit"]                 = ac.isCarInPit(self.car_id)
+        try:
+            self["penaltyTime"]         = info.graphics.penaltyTime
+        except Exception:
+            self["penaltyTime"]         = 0.0
 
         # angular velocity of the car, using the car as origin
         angular_velocity                = ac.getCarState(self.car_id, acsys.CS.LocalAngularVelocity)
         self['angular_velocity_x']      = angular_velocity[0]
         self['angular_velocity_y']      = angular_velocity[1]
         self['angular_velocity_z']      = angular_velocity[2]
-        # Current velocity vector x,y,z
-        velocity                        = ac.getCarState(self.car_id, acsys.CS.Velocity)
-        self['velocity_x']              = velocity[0]
-        self['velocity_y']              = velocity[1]
-        self['velocity_z']              = velocity[2]
 
         # n_opps = 0
         # carIds = range(1, ac.getCarsCount(), 1)

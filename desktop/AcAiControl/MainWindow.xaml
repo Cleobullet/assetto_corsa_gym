@@ -1,0 +1,386 @@
+<Window x:Class="AcAiControl.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Assetto Corsa AI — Centre de contrôle"
+        Height="820" Width="1240"
+        MinHeight="640" MinWidth="980"
+        Background="#F4F5F7"
+        FontFamily="Segoe UI"
+        Icon="Assets/app.ico"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Top">
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+        <TextBlock Text="Assetto Corsa AI" FontSize="26" FontWeight="Bold"/>
+        <TextBlock x:Name="VersionLabel" Text="v—" FontSize="13" Foreground="#8a8a8a" VerticalAlignment="Center" Margin="10,8,0,0"/>
+      </StackPanel>
+      <TextBlock x:Name="ConnectionLabel" Text="Connexion au service…" Foreground="#444" Margin="0,0,0,10"/>
+      <WrapPanel Margin="0,0,0,10">
+        <Button x:Name="BtnStartWorkers" Content="Démarrer les 2 workers" Margin="0,0,8,8" Padding="12,6" Click="BtnStartWorkers_Click"/>
+        <Button x:Name="BtnStartLearner" Content="Démarrer l’apprentissage" Margin="0,0,8,8" Padding="12,6" Click="BtnStartLearner_Click"/>
+        <Button x:Name="BtnSaveLearner" Content="Créer une sauvegarde" Margin="0,0,8,8" Padding="12,6" Click="BtnSaveLearner_Click"/>
+        <Button x:Name="BtnStopLearner" Content="Arrêter l’apprentissage" Margin="0,0,8,8" Padding="12,6" Click="BtnStopLearner_Click"/>
+        <Button x:Name="BtnStopWorkers" Content="Arrêter les workers" Margin="0,0,8,8" Padding="12,6" Click="BtnStopWorkers_Click"/>
+        <Button x:Name="BtnEmergency" Content="Arrêt d’urgence" Margin="0,0,8,8" Padding="12,6" Background="#C0392B" Foreground="White" Click="BtnEmergency_Click"/>
+        <Button x:Name="BtnTest" Content="Tester" Margin="0,0,8,8" Padding="12,6" Background="#2980B9" Foreground="White" Click="BtnTest_Click"/>
+      </WrapPanel>
+      <TextBlock x:Name="StatusLabel" Text="Prêt." FontWeight="SemiBold" Margin="0,0,0,8"/>
+      <TextBlock x:Name="LearnerLabel" Text="Apprentissage : —" Margin="0,0,0,8"/>
+    </StackPanel>
+
+    <Border DockPanel.Dock="Bottom" Height="160" BorderBrush="#CCC" BorderThickness="1" Background="White" Margin="0,10,0,0">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Journal" FontWeight="SemiBold" Margin="8,6,8,0"/>
+        <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                 FontFamily="Consolas" FontSize="12" BorderThickness="0" Margin="4"/>
+      </DockPanel>
+    </Border>
+
+    <TabControl>
+      <TabItem Header="Workers">
+        <DockPanel Margin="8">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Worker" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <ComboBox x:Name="WorkerPicker" Width="60" SelectedIndex="0">
+              <ComboBoxItem Content="1"/><ComboBoxItem Content="2"/><ComboBoxItem Content="3"/>
+              <ComboBoxItem Content="4"/><ComboBoxItem Content="5"/><ComboBoxItem Content="6"/>
+            </ComboBox>
+            <Button Content="Démarrer" Margin="8,0,0,0" Padding="10,4" Click="BtnWorkerStart_Click"/>
+            <Button Content="Arrêter" Margin="8,0,0,0" Padding="10,4" Click="BtnWorkerStop_Click"/>
+            <Button Content="Redémarrer" Margin="8,0,0,0" Padding="10,4" Click="BtnWorkerRestart_Click"/>
+            <Button Content="Diagnostic" Margin="8,0,0,0" Padding="10,4" Click="BtnWorkerDiag_Click"/>
+          </StackPanel>
+          <DataGrid x:Name="WorkerGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                    CanUserAddRows="False" CanUserDeleteRows="False" HeadersVisibility="Column"
+                    AlternatingRowBackground="#F7F9FC" GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Voiture" Binding="{Binding DisplayId}" Width="60"/>
+              <DataGridTextColumn Header="État" Binding="{Binding Phase}" Width="130"/>
+              <DataGridTextColumn Header="Âge télém. (ms)" Binding="{Binding TelemetryAgeMs}" Width="100"/>
+              <DataGridTextColumn Header="Vitesse*" Binding="{Binding Speed}" Width="80"/>
+              <DataGridTextColumn Header="Gaz reçus" Binding="{Binding Gas}" Width="75"/>
+              <DataGridTextColumn Header="Frein reçu" Binding="{Binding Brake}" Width="75"/>
+              <DataGridTextColumn Header="Volant" Binding="{Binding Steer}" Width="90"/>
+              <DataGridTextColumn Header="Transitions" Binding="{Binding Transitions}" Width="85"/>
+              <DataGridTextColumn Header="Session" Binding="{Binding SelectedModel}" Width="160"/>
+              <DataGridTextColumn Header="Erreur" Binding="{Binding Error}" Width="*"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="Diagnostic">
+        <DockPanel Margin="12">
+          <StackPanel DockPanel.Dock="Top">
+            <Grid Margin="0,0,0,10">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="170"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <TextBlock Text="Utilisation de l'ordinateur" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <StackPanel Grid.Column="1">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock x:Name="DiagTotalCpu" Text="CPU : —" FontSize="20" FontWeight="Bold"/>
+                  <TextBlock x:Name="DiagMeanReward" Text="  •  Récompense moyenne : —" FontSize="14" Foreground="#555" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                </StackPanel>
+                <TextBlock x:Name="DiagNeuro" Text="Neuroévolution : —" FontSize="14" Foreground="#2C5F8A" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                <ProgressBar x:Name="DiagTotalCpuBar" Height="16" Maximum="100" Margin="0,6,0,0"/>
+              </StackPanel>
+            </Grid>
+            <Border Background="#F0F4F8" BorderBrush="#C9D6E5" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+              <TextBlock x:Name="DiagRecommendation" TextWrapping="Wrap" FontSize="14"/>
+            </Border>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+              <TextBlock Text="Légende :" Foreground="#555" Margin="0,0,8,0"/>
+              <Border Width="16" Height="4" Background="#27AE60" VerticalAlignment="Center"/>
+              <TextBlock Text=" étapes / 2 s" Foreground="#555" Margin="4,0,14,0"/>
+              <Border Width="16" Height="4" Background="#2980B9" VerticalAlignment="Center"/>
+              <TextBlock Text=" CPU %" Foreground="#555" Margin="4,0,14,0"/>
+              <Border Width="16" Height="4" Background="#E67E22" VerticalAlignment="Center"/>
+              <TextBlock Text=" vitesse" Foreground="#555" Margin="4,0,14,0"/>
+              <Border Width="16" Height="4" Background="#8E44AD" VerticalAlignment="Center"/>
+              <TextBlock Text=" récompense" Foreground="#555" Margin="4,0,0,0"/>
+            </StackPanel>
+          </StackPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <UniformGrid Columns="2">
+              <Border BorderBrush="#DDD" BorderThickness="1" Background="White" Margin="4" Padding="6">
+                <StackPanel>
+                  <TextBlock x:Name="DiagTitle0" Text="Voiture 0" FontWeight="SemiBold"/>
+                  <Canvas x:Name="DiagChart0" Height="130"/>
+                </StackPanel>
+              </Border>
+              <Border BorderBrush="#DDD" BorderThickness="1" Background="White" Margin="4" Padding="6">
+                <StackPanel>
+                  <TextBlock x:Name="DiagTitle1" Text="Voiture 1" FontWeight="SemiBold"/>
+                  <Canvas x:Name="DiagChart1" Height="130"/>
+                </StackPanel>
+              </Border>
+              <Border BorderBrush="#DDD" BorderThickness="1" Background="White" Margin="4" Padding="6">
+                <StackPanel>
+                  <TextBlock x:Name="DiagTitle2" Text="Voiture 2" FontWeight="SemiBold"/>
+                  <Canvas x:Name="DiagChart2" Height="130"/>
+                </StackPanel>
+              </Border>
+              <Border BorderBrush="#DDD" BorderThickness="1" Background="White" Margin="4" Padding="6">
+                <StackPanel>
+                  <TextBlock x:Name="DiagTitle3" Text="Voiture 3" FontWeight="SemiBold"/>
+                  <Canvas x:Name="DiagChart3" Height="130"/>
+                </StackPanel>
+              </Border>
+              <Border BorderBrush="#DDD" BorderThickness="1" Background="White" Margin="4" Padding="6">
+                <StackPanel>
+                  <TextBlock x:Name="DiagTitle4" Text="Voiture 4" FontWeight="SemiBold"/>
+                  <Canvas x:Name="DiagChart4" Height="130"/>
+                </StackPanel>
+              </Border>
+              <Border BorderBrush="#DDD" BorderThickness="1" Background="White" Margin="4" Padding="6">
+                <StackPanel>
+                  <TextBlock x:Name="DiagTitle5" Text="Voiture 5" FontWeight="SemiBold"/>
+                  <Canvas x:Name="DiagChart5" Height="130"/>
+                </StackPanel>
+              </Border>
+            </UniformGrid>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="Évolution">
+        <DockPanel Margin="12">
+          <StackPanel DockPanel.Dock="Top" MaxWidth="680" HorizontalAlignment="Left">
+            <TextBlock x:Name="EvoGeneration" Text="Génération —" FontSize="56" FontWeight="Bold" Foreground="#2C5F8A"/>
+            <TextBlock x:Name="EvoStatus" Text="La neuroévolution n'est pas démarrée." FontSize="16" Foreground="#777" TextWrapping="Wrap" Margin="0,8,0,0"/>
+            <TextBlock x:Name="EvoProgressText" Text="Candidats évalués : — / —" FontSize="18" FontWeight="SemiBold" Margin="0,24,0,6"/>
+            <ProgressBar x:Name="EvoProgressBar" Height="28" Maximum="120" Margin="0,0,0,12"/>
+            <TextBlock x:Name="EvoBest" Text="Meilleur candidat : —" FontSize="20" FontWeight="SemiBold" Foreground="#27AE60" Margin="0,12,0,0"/>
+          </StackPanel>
+        </DockPanel>
+      </TabItem>
+
+<TabItem Header="Sauvegardes">
+        <DockPanel Margin="12">
+          <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="Chaque ligne est une copie enregistrée, pas la progression en direct. Saisis un nouveau nom pour sauvegarder ; un nom daté est proposé par le bouton du haut." TextWrapping="Wrap" Margin="0,0,0,8"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+              <TextBox x:Name="SaveName" Width="180" ToolTip="Nom de la sauvegarde"/>
+              <Button Content="Créer une copie nommée" Click="SaveNamed_Click" Margin="8,0"/>
+              <Button Content="Nouvel entraînement" Click="NewSave_Click" Margin="8,0"/>
+              <Button Content="Actualiser" Click="RefreshSaves_Click"/>
+              <Button Content="Charger la sélection" Click="LoadSave_Click" Margin="8,0"/>
+              <Button Content="Supprimer la sélection" Click="DeleteSave_Click"/>
+            </StackPanel>
+          </StackPanel>
+          <DataGrid x:Name="SavesGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Nom" Binding="{Binding Name}" Width="*"/>
+              <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="190"/>
+              <DataGridTextColumn Header="Étapes" Binding="{Binding Steps}" Width="90"/>
+              <DataGridTextColumn Header="Voiture" Binding="{Binding Car}" Width="180"/>
+              <DataGridTextColumn Header="Circuit" Binding="{Binding Track}" Width="180"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Paramètres">
+        <DockPanel Margin="12">
+          <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,8"
+                       Text="Arrête les workers et l’apprentissage avant de modifier les réglages. Enregistre, puis redémarre les workers et l’apprentissage. Seuls les réglages compatibles avec le modèle actuel sont proposés."/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Recharger" Padding="12,6" Click="BtnSettingsReload_Click"/>
+              <Button Content="Enregistrer" Margin="8,0,0,0" Padding="12,6" Click="BtnSettingsSave_Click"/>
+            </StackPanel>
+          </StackPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+              <GroupBox Header="Circuit, voiture et apprentissage" Margin="0,0,0,12" Padding="8">
+                <ItemsControl x:Name="SettingsList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Grid Margin="0,4">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="280"/>
+                          <ColumnDefinition Width="*"/>
+                          <ColumnDefinition Width="260"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Hint}" Foreground="#777" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                        <TextBox x:Name="ValueText" Grid.Column="2"
+                                 Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="4" Visibility="Collapsed"/>
+                        <ComboBox x:Name="ValueChoice" Grid.Column="2"
+                                  ItemsSource="{Binding Choices}"
+                                  SelectedItem="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEditable="False" Visibility="Collapsed"/>
+                        <CheckBox x:Name="ValueBool" Grid.Column="2"
+                                  IsChecked="{Binding BoolValue, UpdateSourceTrigger=PropertyChanged}"
+                                  Content="Activé" VerticalAlignment="Center" Visibility="Collapsed"/>
+                      </Grid>
+                      <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsBool}" Value="True">
+                          <Setter TargetName="ValueBool" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsChoice}" Value="True">
+                          <Setter TargetName="ValueChoice" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <MultiDataTrigger>
+                          <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding IsBool}" Value="False"/>
+                            <Condition Binding="{Binding IsChoice}" Value="False"/>
+                          </MultiDataTrigger.Conditions>
+                          <Setter TargetName="ValueText" Property="Visibility" Value="Visible"/>
+                        </MultiDataTrigger>
+                      </DataTemplate.Triggers>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </GroupBox>
+
+              <GroupBox Header="Fenêtres workers (nombre, résolution et son)" Margin="0,0,0,12" Padding="8">
+                <StackPanel>
+                  <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="280"/>
+                      <ColumnDefinition Width="260"/>
+                      <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Nombre de workers" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="SettingsWorkerCount" Grid.Column="1" SelectionChanged="SettingsWorkerCount_Changed">
+                      <ComboBoxItem Content="1"/><ComboBoxItem Content="2"/>
+                      <ComboBoxItem Content="3"/><ComboBoxItem Content="4"/>
+                      <ComboBoxItem Content="5"/><ComboBoxItem Content="6"/>
+                    </ComboBox>
+                    <TextBlock Grid.Column="2" Text="Combien de voitures à lancer ensemble. 2 recommandé pour ton PC." Foreground="#777" Margin="8,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                  </Grid>
+                  <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="280"/>
+                      <ColumnDefinition Width="260"/>
+                      <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Préréglage résolution" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="SettingsQualityPreset" Grid.Column="1" SelectionChanged="SettingsQualityPreset_Changed">
+                      <ComboBoxItem Content="minimal (640×360)" Tag="minimal"/>
+                      <ComboBoxItem Content="léger (832×468)" Tag="leger" IsSelected="True"/>
+                      <ComboBoxItem Content="moyen (1280×720)" Tag="moyen"/>
+                      <ComboBoxItem Content="élevé (1600×900)" Tag="eleve"/>
+                      <ComboBoxItem Content="perso" Tag="perso"/>
+                    </ComboBox>
+                    <TextBlock Grid.Column="2" Text="Moins = plus léger pour 6 fenêtres." Foreground="#777" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                  </Grid>
+                  <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="280"/>
+                      <ColumnDefinition Width="100"/>
+                      <ColumnDefinition Width="20"/>
+                      <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Résolution workers (L × H)" VerticalAlignment="Center"/>
+                    <TextBox x:Name="SettingsWorkerWidth" Grid.Column="1" Padding="4"/>
+                    <TextBlock Grid.Column="2" Text="×" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBox x:Name="SettingsWorkerHeight" Grid.Column="3" Padding="4"/>
+                  </Grid>
+                  <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="280"/>
+                      <ColumnDefinition Width="260"/>
+                      <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Son du jeu" VerticalAlignment="Center"/>
+                    <CheckBox x:Name="SettingsGameSound" Grid.Column="1" Content="Activé" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="Volume maître Assetto Corsa (audio.ini)." Foreground="#777" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                  </Grid>
+                  <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="280"/>
+                      <ColumnDefinition Width="260"/>
+                      <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Volume maître (0–1)" VerticalAlignment="Center"/>
+                    <TextBox x:Name="SettingsGameVolume" Grid.Column="1" Padding="4"/>
+                    <TextBlock Grid.Column="2" Text="Ignoré si le son est désactivé." Foreground="#777" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                  </Grid>
+                </StackPanel>
+              </GroupBox>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="Récompenses">
+        <DockPanel Margin="12">
+          <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,8"
+                       Text="Ces valeurs alimentent le calcul actif des récompenses. Arrête les workers et l’apprentissage avant de les enregistrer. Redémarre ensuite les deux. Pour comparer de nouvelles récompenses, utilise un nouvel entraînement avec une mémoire vide."/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Recharger" Padding="12,6" Click="BtnRewardReload_Click"/>
+              <Button Content="Enregistrer" Margin="8,0,0,0" Padding="12,6" Click="BtnRewardSave_Click"/>
+            </StackPanel>
+          </StackPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="RewardList">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="280"/>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="220"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Key}" Foreground="#777" VerticalAlignment="Center" FontFamily="Consolas"/>
+                    <TextBox Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Padding="4"/>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="Recherche">
+        <DockPanel Margin="12">
+          <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,8"
+                       Text="Les 6 workers doivent déjà être lancés. La recherche les fait conduire avec le modèle actuel, même si l’apprentissage est arrêté. Chaque essai choisit des paramètres, les applique aux six voitures, les place sur six points du circuit, puis les laisse conduire 30 secondes. Le score vient des mètres réellement parcourus. Le meilleur jeu est gardé pour un entraînement plus tard."/>
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,8"
+                       Text="Au lancement, chaque worker se téléporte une fois au hasard dans son sixième de piste. Relance les 6 workers une fois : ceux qui tournent déjà ont été démarrés avant cette correction, et ils restent au point mort pendant la recherche."/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+              <Button x:Name="BtnRewardSearch" Content="Essayer sur les 6 workers" Padding="12,6" Click="BtnRewardSearch_Click"/>
+              <Button x:Name="BtnRewardApply" Content="Appliquer la ligne choisie" Margin="8,0,0,0" Padding="12,6" Click="BtnRewardApply_Click"/>
+            </StackPanel>
+            <TextBlock x:Name="SearchSummary" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock x:Name="SearchDetail" TextWrapping="Wrap" Foreground="#444" Margin="0,0,0,8"/>
+          </StackPanel>
+          <DataGrid x:Name="RewardSearchGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                    SelectionMode="Single" CanUserAddRows="False" SelectionChanged="RewardSearchGrid_SelectionChanged">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Rang" Binding="{Binding Rank}" Width="50"/>
+              <DataGridTextColumn Header="Score" Binding="{Binding ScoreText}" Width="70"/>
+              <DataGridTextColumn Header="" Binding="{Binding Mark}" Width="70"/>
+              <DataGridTextColumn Header="Progression / m" Binding="{Binding Progress}" Width="120"/>
+              <DataGridTextColumn Header="Hors piste" Binding="{Binding Offtrack}" Width="90"/>
+              <DataGridTextColumn Header="Sortie" Binding="{Binding Terminal}" Width="70"/>
+              <DataGridTextColumn Header="Lenteur" Binding="{Binding Idle}" Width="80"/>
+              <DataGridTextColumn Header="Bonus tour" Binding="{Binding LapBonus}" Width="90"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="Logs">
+        <DockPanel Margin="12">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Fichier :" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <ComboBox x:Name="LogPicker" Width="240" SelectionChanged="LogPicker_Changed"/>
+            <Button Content="Actualiser" Margin="8,0,0,0" Padding="10,4" Click="BtnLogsRefresh_Click"/>
+            <CheckBox x:Name="LogsAutoRefresh" Content="Auto (2 s)" IsChecked="True" Margin="12,0,0,0" VerticalAlignment="Center"/>
+          </StackPanel>
+          <TextBox x:Name="LogView" IsReadOnly="True" FontFamily="Consolas" FontSize="12"
+                   TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

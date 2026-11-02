@@ -88,7 +88,7 @@ class SAC(Algorithm):
         return stats
 
     def update_policy_and_entropy(self, batch, writer):
-        states, actions, rewards, next_states, dones = batch
+        states, actions, rewards, next_states, dones = batch[:5]
 
         # Update policy.
         policy_loss, entropies = self.calc_policy_loss(states)
@@ -144,11 +144,12 @@ class SAC(Algorithm):
         return entropy_loss
 
     def update_q_functions(self, batch, writer, imp_ws1=None, imp_ws2=None):
-        states, actions, rewards, next_states, dones = batch
+        states, actions, rewards, next_states, dones = batch[:5]
 
         # Calculate current and target Q values.
         curr_qs1, curr_qs2 = self.calc_current_qs(states, actions)
-        target_qs = self.calc_target_qs(rewards, next_states, dones)
+        target_qs = self.calc_target_qs(rewards, next_states, dones,
+                                      batch[5] if len(batch) > 5 else None)
 
         # Update Q functions.
         q_loss, mean_q1, mean_q2 = \
@@ -171,7 +172,7 @@ class SAC(Algorithm):
         curr_qs1, curr_qs2 = self._online_q_net(states, actions)
         return curr_qs1, curr_qs2
 
-    def calc_target_qs(self, rewards, next_states, dones):
+    def calc_target_qs(self, rewards, next_states, dones, discounts=None):
         with torch.no_grad():
             next_actions, next_entropies, _ = self._policy_net(next_states)
             next_qs1, next_qs2 = self._target_q_net(next_states, next_actions)
@@ -179,7 +180,7 @@ class SAC(Algorithm):
                 torch.min(next_qs1, next_qs2) + self._alpha * next_entropies
 
         assert rewards.shape == next_qs.shape
-        target_qs = rewards + (1.0 - dones) * self._discount * next_qs
+        target_qs = rewards + (1.0 - dones) * (self._discount if discounts is None else discounts) * next_qs
 
         return target_qs
 
@@ -215,3 +216,23 @@ class SAC(Algorithm):
         self._policy_net.load(os.path.join(load_dir, 'policy_net.pth'))
         self._online_q_net.load(os.path.join(load_dir, 'online_q_net.pth'))
         self._target_q_net.load(os.path.join(load_dir, 'target_q_net.pth'))
+
+    def training_state_dict(self):
+        return dict(policy=self._policy_net.state_dict(), online_q=self._online_q_net.state_dict(),
+                    target_q=self._target_q_net.state_dict(), policy_optimizer=self._policy_optim.state_dict(),
+                    q_optimizer=self._q_optim.state_dict(), alpha_optimizer=self._alpha_optim.state_dict(),
+                    log_alpha=self._log_alpha.detach().clone(), learning_steps=self._learning_steps,
+                    update_entropy=self.update_entropy)
+
+    def load_training_state_dict(self, state):
+        self._policy_net.load_state_dict(state['policy'])
+        self._online_q_net.load_state_dict(state['online_q'])
+        self._target_q_net.load_state_dict(state['target_q'])
+        self._policy_optim.load_state_dict(state['policy_optimizer'])
+        self._q_optim.load_state_dict(state['q_optimizer'])
+        with torch.no_grad():
+            self._log_alpha.copy_(state['log_alpha'].to(self._device))
+        self._alpha = self._log_alpha.detach().exp()
+        self._alpha_optim.load_state_dict(state['alpha_optimizer'])
+        self._learning_steps = int(state['learning_steps'])
+        self.update_entropy = bool(state['update_entropy'])

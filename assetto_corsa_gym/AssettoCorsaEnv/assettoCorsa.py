@@ -18,9 +18,12 @@ class ModuleConfig:
     def __init__(self, config) -> None:
         # deep copy and update
         self.config = copy.deepcopy(config)
-        self.config.ego_server_host_name = config.remote_machine_ip
-        self.config.opponents_server_host_name = config.remote_machine_ip
-        self.config.simulation_management_server_host_name = config.remote_machine_ip
+        host = str(config.remote_machine_ip or "127.0.0.1").strip()
+        if host.lower() == "localhost":
+            host = "127.0.0.1"
+        self.config.ego_server_host_name = host
+        self.config.opponents_server_host_name = host
+        self.config.simulation_management_server_host_name = host
 
         #
         self.max_episode_steps = self.config.max_episode_py_time * self.config.ego_sampling_freq

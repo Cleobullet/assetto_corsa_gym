@@ -60,3 +60,27 @@ MUJOCO_LOG.TXT
 output
 outputs
 assetto_corsa_gym.code-workspace
+
+# local runtime / tooling
+.venv-acgym/
+.worktrees/
+.pytest_cache/
+ac_workers/logs/
+ac_workers/status/
+ac_workers/.c4d_server/
+ac_backups/
+AssettoCorsa-AI/
+ContentManager-AI/
+desktop/AcAiControl/bin/
+desktop/AcAiControl/obj/
+
+# Windows app generated outputs
+desktop/**/bin/
+desktop/**/obj/
+desktop/build-*/
+desktop/audit-build/
+
+# runtime / sauvegardes (pas du code source)
+ac_profiles/
+legacy/
+

@@ -77,45 +77,87 @@ class ReplayBuffer:
 
         self._rewards = np.empty((self._memory_size, 1), dtype=np.float32)
         self._dones = np.empty((self._memory_size, 1), dtype=np.float32)
+        self._discount_values = np.empty((self._memory_size, 1), dtype=np.float32)
 
         if self._nstep != 1:
             self._nstep_buffer = NStepBuffer(self._gamma, self._nstep)
+            self._nstep_streams = {}
         logger.info(f"Replay buffer initialized for {self._memory_size} samples")
 
-    def append(self, state, action, reward, next_state, terminated, episode_done=None):
+    def append(self, state, action, reward, next_state, terminated, episode_done=None, stream_id=None):
         """
         done (masked_done): False if the agent reach time horizons. Else = done
         """
         if self._nstep != 1:
-            self._nstep_buffer.append(state, action, reward)
+            buffer = self._nstep_buffer
+            if stream_id is not None:
+                if stream_id not in self._nstep_streams:
+                    self._nstep_streams[stream_id] = NStepBuffer(self._gamma, self._nstep)
+                buffer = self._nstep_streams[stream_id]
+            buffer.append(state, action, reward)
 
-            if self._nstep_buffer.is_full():
-                state, action, reward = self._nstep_buffer.get()
-                self._append(state, action, reward, next_state, terminated)
+            if buffer.is_full():
+                discount = self._gamma ** len(buffer)
+                state, action, reward = buffer.get()
+                self._append(state, action, reward, next_state, terminated, discount)
 
             if terminated or episode_done:
-                while not self._nstep_buffer.is_empty():
-                    state, action, reward = self._nstep_buffer.get()
-                    self._append(state, action, reward, next_state, terminated)
+                while not buffer.is_empty():
+                    discount = self._gamma ** len(buffer)
+                    state, action, reward = buffer.get()
+                    self._append(state, action, reward, next_state, terminated, discount)
 
         else:
             self._append(state, action, reward, next_state, terminated)
 
-    def _append(self, state, action, reward, next_state, done):
+    def _append(self, state, action, reward, next_state, done, discount=None):
         self._states[self._p, ...] = state
         self._actions[self._p, ...] = action
         self._rewards[self._p, ...] = reward
         self._next_states[self._p, ...] = next_state
         self._dones[self._p, ...] = done
+        self._discount_values[self._p, ...] = self._gamma ** self._nstep if discount is None else discount
 
         self._n = min(self._n + 1, self._memory_size)
         self._p = (self._p + 1) % self._memory_size
 
-    def sample(self, batch_size, device=torch.device('cpu')):
+    def sample(self, batch_size, device=torch.device('cpu'), include_discounts=False):
         assert isinstance(batch_size, int) and batch_size > 0
 
         idxes = self._sample_idxes(batch_size)
-        return self._sample_batch(idxes, batch_size, device)
+        batch = self._sample_batch(idxes, batch_size, device)
+        if include_discounts:
+            batch += (torch.tensor(self._discount_values[idxes], dtype=torch.float, device=device),)
+        return batch
+
+    def reset_stream(self, stream_id):
+        if self._nstep != 1:
+            self._nstep_streams.pop(stream_id, None)
+
+    def state_dict(self):
+        return dict(memory_size=self._memory_size, state_shape=self._state_shape,
+                    action_shape=self._action_shape, gamma=self._gamma, nstep=self._nstep,
+                    n=self._n, p=self._p, arrays={name: getattr(self, name)[:self._n].copy()
+                    for name in ('_states', '_actions', '_rewards', '_next_states', '_dones', '_discount_values')})
+
+    def load_state_dict(self, state):
+        for key in ('memory_size', 'state_shape', 'action_shape', 'gamma', 'nstep'):
+            if state[key] != getattr(self, '_' + key):
+                raise ValueError('Replay configuration mismatch: ' + key)
+        n, p = int(state['n']), int(state['p'])
+        if not (0 <= n <= self._memory_size and 0 <= p < self._memory_size):
+            raise ValueError('Invalid replay cursor')
+        if n < self._memory_size and p != n:
+            raise ValueError('Invalid partially filled replay cursor')
+        for name in ('_states', '_actions', '_rewards', '_next_states', '_dones', '_discount_values'):
+            values = state['arrays'][name]
+            if values.shape != getattr(self, name)[:n].shape or not np.isfinite(values).all():
+                raise ValueError('Invalid replay array: ' + name)
+        self._reset()
+        for name, values in state['arrays'].items():
+            getattr(self, name)[:n] = values
+        self._n, self._p = n, p
+        # Pending n-step tails are deliberately not continued across a simulator restart.
 
     def _sample_idxes(self, batch_size):
         return np.random.randint(low=0, high=self._n, size=batch_size)

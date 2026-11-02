@@ -1,0 +1,8 @@
+worker_id: 2
+remote_machine_ip: localhost
+ego_server_port: 2365
+opponents_server_port: 2366
+simulation_management_server_port: 2367
+vjoy_device_id: 3
+log_dir: ac_workers/worker_2
+lock_file: ac_workers/locks/worker_2.lock

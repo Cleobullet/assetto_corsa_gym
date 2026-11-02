@@ -18,7 +18,8 @@ class GrabberSharedMemoryDualBuffer:
         elif color_mode.lower() == "gray":
             self.channels = 1
         else:
-            raise ValueError(f"Invalid color_mode. Choose 'gray' or 'bgr'. Got: {color_mode}")
+            raise ValueError(
+                "Invalid color_mode. Choose 'gray' or 'bgr'. Got: {0}".format(color_mode))
 
         self.image_size = shm_image_width * shm_image_height * self.channels
         # Reserve 4 bytes for the active index, and two buffers for dual buffering.

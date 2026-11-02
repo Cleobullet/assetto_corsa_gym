@@ -1,0 +1,12 @@
+{
+  "WorkerWidth": 832,
+  "WorkerHeight": 468,
+  "WorkerCount": 6,
+  "QualityPreset": "leger",
+  "GameSound": false,
+  "GameMasterVolume": 1,
+  "TrackId": "monza",
+  "CarId": "lotus_exos_125",
+  "TrackName": "monza",
+  "TrackConfig": ""
+}

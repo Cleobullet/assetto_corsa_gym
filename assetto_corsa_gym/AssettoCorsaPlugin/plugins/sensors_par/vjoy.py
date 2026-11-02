@@ -1,12 +1,23 @@
 import ctypes
-import struct, time
+import struct
+import time
 import math
+import os
 
 CONST_DLL_VJOY = "C:\\Program Files\\vJoy\\x64\\vJoyInterface.dll"
 
 
+def default_vjoy_reference():
+    value = os.environ.get("ACGYM_VJOY_DEVICE")
+    if value is not None:
+        return int(value)
+    return 1
+
+
 class vJoy(object):
-    def __init__(self, reference=1):
+    def __init__(self, reference=None):
+        if reference is None:
+            reference = default_vjoy_reference()
         self.handle = None
         self.dll = ctypes.CDLL(CONST_DLL_VJOY)
         self.reference = reference
@@ -32,35 +43,6 @@ class vJoy(object):
                                  wAxisVX=0, wAxisVY=0, wAxisVZ=0,
                                  wAxisVBRX=0, wAxisVBRY=0, wAxisVBRZ=0,
                                  lButtons=0, bHats=0, bHatsEx1=0, bHatsEx2=0, bHatsEx3=0):
-        """
-        typedef struct _JOYSTICK_POSITION
-        {
-            BYTE    bDevice; // Index of device. 1-based
-            LONG    wThrottle;
-            LONG    wRudder;
-            LONG    wAileron;
-            LONG    wAxisX;
-            LONG    wAxisY;
-            LONG    wAxisZ;
-            LONG    wAxisXRot;
-            LONG    wAxisYRot;
-            LONG    wAxisZRot;
-            LONG    wSlider;
-            LONG    wDial;
-            LONG    wWheel;
-            LONG    wAxisVX;
-            LONG    wAxisVY;
-            LONG    wAxisVZ;
-            LONG    wAxisVBRX;
-            LONG    wAxisVBRY;
-            LONG    wAxisVBRZ;
-            LONG    lButtons;   // 32 buttons: 0x00000001 means button1 is pressed, 0x80000000 -> button32 is pressed
-            DWORD   bHats;      // Lower 4 bits: HAT switch or 16-bit of continuous HAT switch
-                        DWORD   bHatsEx1;   // 16-bit of continuous HAT switch
-                        DWORD   bHatsEx2;   // 16-bit of continuous HAT switch
-                        DWORD   bHatsEx3;   // 16-bit of continuous HAT switch
-        } JOYSTICK_POSITION, *PJOYSTICK_POSITION;
-        """
         joyPosFormat = "BlllllllllllllllllllIIII"
         pos = struct.pack(joyPosFormat, self.reference, wThrottle, wRudder,
                           wAileron, wAxisX, wAxisY, wAxisZ, wAxisXRot, wAxisYRot,
@@ -73,7 +55,6 @@ class vJoy(object):
             return True
         return False
 
-    # Not working, send buttons one by one
     def sendButtons(self, bState):
         joyPosition = self.generateJoystickPosition(lButtons=bState)
         return self.update(joyPosition)

@@ -1,11 +1,21 @@
 import ctypes
 import struct, time
 import math
+import os
 
 CONST_DLL_VJOY = "C:\\Program Files\\vJoy\\x64\\vJoyInterface.dll"
 
+
+def default_vjoy_reference() -> int:
+    if "ACGYM_VJOY_DEVICE" in os.environ:
+        return int(os.environ["ACGYM_VJOY_DEVICE"])
+    return 1
+
+
 class vJoy(object):
-    def __init__(self, reference=1):
+    def __init__(self, reference=None):
+        if reference is None:
+            reference = default_vjoy_reference()
         self.handle = None
         self.dll = ctypes.CDLL(CONST_DLL_VJOY)
         self.reference = reference

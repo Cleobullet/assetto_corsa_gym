@@ -1,0 +1,10 @@
+worker_id: 0
+remote_machine_ip: localhost
+ego_server_port: 2345
+opponents_server_port: 2346
+simulation_management_server_port: 2347
+vjoy_device_id: 1
+diag_port: 24100
+transition_server_port: 24050
+log_dir: ac_workers/worker_0
+lock_file: ac_workers/locks/worker_0.lock

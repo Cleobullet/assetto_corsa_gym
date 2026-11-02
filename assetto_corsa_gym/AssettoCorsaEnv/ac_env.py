@@ -19,6 +19,28 @@ from AssettoCorsaEnv.reference_lap import ReferenceLap
 import AssettoCorsaEnv.sensors_ray_casting as sensors_ray_casting
 from AssettoCorsaEnv.sensors_ray_casting import MAX_RAY_LEN
 from AssettoCorsaEnv.gap import get_gap
+from AssettoCorsaEnv.progress_reward import (
+    CleanLapTracker,
+    is_currently_off_track,
+    progress_reward,
+    spline_delta_m,
+    update_wrong_way,
+)
+from AssettoCorsaEnv.training_safety import (
+    apply_safe_control_limits,
+    apply_v3_control_limits,
+    auto_shift_neutral_to_first,
+    clip_safe_action_delta,
+    executed_action_for_buffer,
+    policy_steer_to_internal,
+    sample_safe_exploration_action,
+    sample_safe_exploration_action_v3,
+    SAFE_ACC_PEDAL_MAX_DEFAULT,
+    SAFE_BRAKE_PEDAL_MAX_DEFAULT,
+    SAFE_EXPLORATION_STEER_DEG_DEFAULT,
+    STEER_HARD_FAIL_DEG,
+    STEER_SAFE_DEG_DEFAULT,
+)
 
 import torch
 
@@ -71,6 +93,50 @@ def convert_to_seconds(time_str):
     milliseconds = int(parts[2])
 
     return minutes * 60 + seconds + milliseconds / 1000
+
+_REWARD_OVERRIDE_KEYS = (
+    "reward_progress_per_m",
+    "reward_offtrack_per_step",
+    "reward_smoothness_coef",
+    "reward_step_cost",
+    "reward_idle_speed_kmh",
+    "reward_n_sectors",
+    "reward_clean_sector_bonus",
+    "reward_clean_lap_bonus",
+    "reward_clean_lap_time_ref_sec",
+    "reward_oot_terminal_penalty",
+    "reward_idle_penalty",
+)
+_reward_override_mtime = None
+_reward_override_values = None
+
+
+def _apply_reward_override(config):
+    """Live search writes ac_workers/status/reward_override.json. Collectors pick it up without a restart."""
+    global _reward_override_mtime, _reward_override_values
+    path = Path(__file__).resolve().parents[2] / "ac_workers" / "status" / "reward_override.json"
+    try:
+        mtime = path.stat().st_mtime if path.is_file() else None
+    except OSError:
+        mtime = None
+    if mtime != _reward_override_mtime:
+        _reward_override_mtime = mtime
+        _reward_override_values = None
+        if mtime is not None:
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                params = payload.get("params") if isinstance(payload, dict) else None
+                if isinstance(params, dict):
+                    _reward_override_values = {
+                        key: float(params[key]) for key in _REWARD_OVERRIDE_KEYS if key in params
+                    }
+            except (OSError, ValueError, TypeError):
+                _reward_override_values = None
+    if not _reward_override_values:
+        return
+    for key, value in _reward_override_values.items():
+        setattr(config, key, value)
+
 
 class TaskIdsIndexer:
     def __init__(self, tracks, cars):
@@ -159,35 +225,9 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
     }
 
     obs_enabled_channels = [
-        'speed',
-        'gap',
-        'LastFF',
-        'RPM',
-        'accelX',
-        'accelY',
-        'actualGear',
-        #'angular_velocity_x',
-        'angular_velocity_y',
-        #'angular_velocity_z',
         'local_velocity_x',
         'local_velocity_y',
-        #'local_velocity_z',
-        'SlipAngle_fl',
-        'SlipAngle_fr',
-        'SlipAngle_rl',
-        'SlipAngle_rr',
-        # 'tyre_slip_ratio_fl',
-        # 'tyre_slip_ratio_fr',
-        # 'tyre_slip_ratio_rl',
-        # 'tyre_slip_ratio_rr',
-        # 'wheel_speed_rr',
-        # 'wheel_speed_rl',
-        # 'wheel_speed_fr',
-        # 'wheel_speed_fl',
-        # 'Dy_rr',
-        # 'Dy_rl',
-        # 'Dy_fr',
-        # 'Dy_fl',
+        'angular_velocity_y',
     ]
 
     obs_extra_enabled_channels = [
@@ -228,7 +268,10 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.torch_device = torch_device
         self.use_relative_actions = self.config.use_relative_actions
         self.enable_sensors = self.config.enable_sensors
-        self.enable_out_of_track_calculation = enable_out_of_track_calculation
+        self.oot_mode = str(getattr(self.config, 'oot_mode', 'local_gap'))
+        self.oot_gap_m = float(getattr(self.config, 'oot_gap_m', 12.0))
+        self.oot_soft_gap_m = float(getattr(self.config, 'oot_soft_gap_m', 8.0))
+        self.enable_out_of_track_calculation = self.oot_mode == 'occupancy'
         self._max_episode_steps = max_episode_steps
         self.enable_low_speed_termination = self.config.enable_low_speed_termination
         self.max_gap = max_gap
@@ -284,8 +327,12 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.dt = 1. / self.ctrl_rate
 
         # load track  # TODO: use pytorch?
-        self.track = Track(track_file_path=self.track_file, track_grid_file=self.track_grid_file,
-                           torch_device=None) # Note: send the torch device to find the grid using pytorch
+        # Occupancy grid is ~4 GiB; only load it for oot_mode=occupancy.
+        grid_file = self.track_grid_file
+        if not self.enable_out_of_track_calculation:
+            grid_file = None
+        self.track = Track(track_file_path=self.track_file, track_grid_file=grid_file,
+                           torch_device=None)
 
         #
         self.ref_lap = ReferenceLap(self.ref_lap_file, use_target_speed=self.use_target_speed)
@@ -299,8 +346,9 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.ref_lap_dist_channel_time = self.ref_lap.get_channel_time("lapDistance")
 
         if self.enable_sensors:
-            self.sensors = sensors_ray_casting.SensorsRayCasting(self.track.right_border_x, self.track.right_border_y,
-                                                             self.track.left_border_x, self.track.left_border_y)
+            from AssettoCorsaEnv.lidar import LiDAR5Rays
+            self.lidar = LiDAR5Rays(self.track.left_border_x, self.track.left_border_y,
+                                    self.track.right_border_x, self.track.right_border_y)
 
         #
         # for gym
@@ -330,29 +378,82 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.controls_min_values = np.array([-self.norm_steer_at_max, -1.0, -1.0])
         self.controls_max_values = np.array([ self.norm_steer_at_max,  1.0,  1.0])
 
+        self.safe_training_mode = getattr(self.config, 'safe_training_mode', False)
+        self.auto_shift_to_first = getattr(self.config, 'auto_shift_to_first', False)
+        self.safe_steer_deg = float(getattr(self.config, 'safe_steer_deg', STEER_SAFE_DEG_DEFAULT))
+        self.safe_acc_pedal_max = float(getattr(self.config, 'safe_acc_pedal_max', SAFE_ACC_PEDAL_MAX_DEFAULT))
+        self.safe_brake_pedal_max = float(getattr(self.config, 'safe_brake_pedal_max', SAFE_BRAKE_PEDAL_MAX_DEFAULT))
+        self.safe_exploration_steer_deg = float(
+            getattr(self.config, 'safe_exploration_steer_deg', SAFE_EXPLORATION_STEER_DEG_DEFAULT))
+        self.steer_control_v3 = bool(getattr(self.config, 'steer_control_v3', False))
+        self.exploration_v3 = bool(getattr(self.config, 'exploration_v3', False))
+        self.steer_limit_deg = float(getattr(self.config, 'steer_limit_deg', 20.0))
+        self.steer_max_delta_deg = float(getattr(self.config, 'steer_max_delta_deg', 3.0))
+        self.steer_soft_zone_deg = float(getattr(self.config, 'steer_soft_zone_deg', 2.0))
+        self.steer_center_deadband_deg = float(getattr(self.config, 'steer_center_deadband_deg', 1.0))
+        self.steer_center_decay = float(getattr(self.config, 'steer_center_decay', 0.5))
+        self.reward_v3 = bool(getattr(self.config, 'reward_v3', False))
+        self.reward_gap_penalty_coef = float(getattr(self.config, 'reward_gap_penalty_coef', 0.0))
+        self.reward_gap_penalty_cap = float(getattr(self.config, 'reward_gap_penalty_cap', 0.0))
+        self.reward_steer_penalty_coef = float(getattr(self.config, 'reward_steer_penalty_coef', 0.0))
+        self.reward_oot_terminal_penalty = float(getattr(self.config, 'reward_oot_terminal_penalty', 0.0))
+        self.reward_idle_penalty = float(getattr(self.config, 'reward_idle_penalty', 0.0))
+        self.reward_brake_penalty_coef = float(getattr(self.config, 'reward_brake_penalty_coef', 0.0))
+        self.reward_brake_penalty_speed_kmh = float(
+            getattr(self.config, 'reward_brake_penalty_speed_kmh', 40.0)
+        )
+        self.reward_wrong_way_steer_coef = float(
+            getattr(self.config, 'reward_wrong_way_steer_coef', 0.0)
+        )
+        self.reward_centerline_bonus_coef = float(
+            getattr(self.config, 'reward_centerline_bonus_coef', 0.0)
+        )
+        self.reward_centerline_bonus_width = float(
+            getattr(self.config, 'reward_centerline_bonus_width', 15.0)
+        )
+        self.reward_correct_steer_bonus_coef = float(
+            getattr(self.config, 'reward_correct_steer_bonus_coef', 0.0)
+        )
+        self.reward_gap_factor_sigma = float(
+            getattr(self.config, 'reward_gap_factor_sigma', 0.0)
+        )
+        self._last_reward_components = {}
+        self.executed_policy_action = np.array([0.0, -1.0, -1.0])
+        self.oot_grace_sec = float(getattr(self.config, 'oot_grace_sec', 3.0))
+        self.oot_hold_sec = float(getattr(self.config, 'oot_hold_sec', 1.5))
+        self.stuck_timeout_sec = float(getattr(self.config, 'stuck_timeout_sec', 3.0))
+        self.stuck_speed_kmh = float(getattr(self.config, 'stuck_speed_kmh', 6.0))
+        self.stuck_move_eps_m = float(getattr(self.config, 'stuck_move_eps_m', 3.0))
+        self.no_progress_timeout_sec = float(getattr(self.config, 'no_progress_timeout_sec', 8.0))
+        self.no_progress_credit_m = float(getattr(self.config, 'no_progress_credit_m', 2.0))
+        self.moved_speed_kmh = float(getattr(self.config, 'moved_speed_kmh', 8.0))
+        self.wrong_way_timeout_sec = float(getattr(self.config, 'wrong_way_timeout_sec', 5.0))
+        self.wrong_way_speed_kmh = float(getattr(self.config, 'wrong_way_speed_kmh', 8.0))
+        self.wrong_way_confirm_m = float(getattr(self.config, 'wrong_way_confirm_m', 8.0))
+        self._clean_lap_tracker = CleanLapTracker(
+            lap_bonus=float(getattr(self.config, 'reward_clean_lap_bonus', 20.0)),
+        )
+        self.low_speed_grace_sec = float(getattr(self.config, 'low_speed_grace_sec', 0.0))
+        self.low_speed_timeout_sec = float(
+            getattr(self.config, 'low_speed_timeout_sec', TERMINAL_JUDGE_TIMEOUT))
+        self.low_speed_threshold_kmh = float(
+            getattr(self.config, 'low_speed_threshold_kmh', TERMINAL_LIMIT_PROGRESS_SPEED * 3.6))
+        self._exploration_rng = np.random.default_rng()
+        self._safe_emergency_active = False
+        self._safe_recover_used = False
+        self._force_episode_done = False
+        self._pending_shift_fail = False
+        self._reset_termination_trackers()
+
         # actions space is always -1 to 1 for most algorithms
         self.action_dim = 3
         self.action_space = Box(low=np.array([-1.0, -1.0, -1.0]), high=np.array([1.0, 1.0, 1.0]))
 
-        state_dim = len( self.obs_enabled_channels )
+        state_dim = len(self.obs_enabled_channels)  # 3 télémétries
         if self.enable_sensors:
-            state_dim += self.sensors.number_of_rays
+            state_dim += 5  # 5 rayons LiDAR (LiDAR5Rays)
         self.previous_obs_to_state_dim = state_dim
-        if self.add_previous_obs_to_state:
-            state_dim  += (PAST_ACTIONS_WINDOW * self.previous_obs_to_state_dim)
-            logger.info(f"Adding previous obs to state {self.previous_obs_to_state_dim}*{PAST_ACTIONS_WINDOW} = {state_dim}")
-        state_dim += CURV_LOOK_AHEAD_VECTOR_SIZE
-        state_dim += (PAST_ACTIONS_WINDOW * 3)
-        if self.use_target_speed:
-            state_dim += TARG_SPEED_LOOK_AHEAD_VECTOR_SIZE
-        if self.config.enable_task_id_in_obs:
-            state_dim += self.tasks_ids.get_number_of_tasks()
-
-        # action that was applied when the current state was read
-        state_dim += 3
-        # out of track in the state
-        state_dim += 1
-        self.state_dim = state_dim
+        self.state_dim = state_dim  # = 8
 
         self.obs_shape = (self.state_dim,)
         if self.use_obs_extra:
@@ -395,6 +496,21 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
 
         self.is_metaworld = False
 
+    def _reset_termination_trackers(self):
+        self._termination_stamp = None
+        self._driving_elapsed = 0.0
+        self._oot_hold_steps = 0
+        self._episode_has_moved = False
+        self._stuck_hold_steps = 0
+        self._stuck_last_xy = None
+        self._no_progress_hold_steps = 0
+        self._no_progress_m = 0.0
+        self._wrong_way_hold_steps = 0
+        self._wrong_way_meters = 0.0
+        self._prev_spline = None
+        if getattr(self, "_clean_lap_tracker", None) is not None:
+            self._clean_lap_tracker.reset()
+
     def set_reset_state(self, send_reset_at_start):
         self.send_reset_at_start = send_reset_at_start
 
@@ -404,6 +520,109 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         self.racing_line[np.sqrt( (self.racing_line[:,0] - x)**2 + (self.racing_line[:,1] - y)**2 ) < RACING_LINE_DIAMETER_CROP]
         if self.torch_device:
             self.racing_line_torch = torch.tensor(self.racing_line, device=self.torch_device, dtype=torch.float)
+
+    def sample_action(self):
+        if self.safe_training_mode and not self.use_relative_actions:
+            if self.exploration_v3:
+                return sample_safe_exploration_action_v3(
+                    self._exploration_rng,
+                    self.norm_steer_at_max,
+                    self.max_steer_deg,
+                )
+            return sample_safe_exploration_action(
+                self._exploration_rng,
+                self.norm_steer_at_max,
+                self.max_steer_deg,
+                exploration_steer_deg=self.safe_exploration_steer_deg,
+            )
+        action = self.action_space.sample()
+        if self.safe_training_mode and self.use_relative_actions:
+            action = clip_safe_action_delta(
+                action,
+                self.current_actions,
+                self.adjusted_controls_rate_limit,
+                self.norm_steer_at_max,
+                self.max_steer_deg,
+                steer_safe_deg=self.safe_steer_deg,
+                acc_pedal_max=self.safe_acc_pedal_max,
+                brake_pedal_max=self.safe_brake_pedal_max,
+            )
+        return action
+
+    def _safe_limit_kwargs(self):
+        return {
+            "steer_safe_deg": self.safe_steer_deg,
+            "acc_pedal_max": self.safe_acc_pedal_max,
+            "brake_pedal_max": self.safe_brake_pedal_max,
+        }
+
+    def _v3_limit_kwargs(self):
+        return {
+            "steer_limit_deg": self.steer_limit_deg,
+            "max_delta_deg": self.steer_max_delta_deg,
+            "soft_zone_deg": self.steer_soft_zone_deg,
+            "center_deadband_deg": self.steer_center_deadband_deg,
+            "center_decay": self.steer_center_decay,
+            "acc_pedal_max": self.safe_acc_pedal_max,
+            "brake_pedal_max": self.safe_brake_pedal_max,
+            "acc_max_delta_pedal": float(getattr(self.config, "acc_max_delta_pedal", 0.0)),
+            "brake_max_delta_pedal": float(getattr(self.config, "brake_max_delta_pedal", 0.0)),
+        }
+
+    def policy_action_to_internal(self, raw) -> np.ndarray:
+        """Scale SAC steer [-1, 1] into AC internal units for ±steer_limit_deg."""
+        out = np.array([0.0, -1.0, -1.0], dtype=np.float64)
+        values = np.asarray(raw, dtype=np.float64).ravel()[:3]
+        out[: len(values)] = values
+        limit = self.steer_limit_deg if self.steer_control_v3 else self.safe_steer_deg
+        out[0] = policy_steer_to_internal(
+            out[0], self.norm_steer_at_max, self.max_steer_deg, limit
+        )
+        # Policy pedals use ReLU; all subsequent limit/actuator code uses [-1,1].
+        # Brake reaches 100% at raw=0.75 (SAC tanh rarely hits +1).
+        from ac_workers.canonical_controls import BRAKE_FULL_AT
+
+        out[1] = 2.0 * float(np.clip(out[1], 0.0, 1.0)) - 1.0
+        brake_pedal = float(np.clip(max(0.0, out[2]) / BRAKE_FULL_AT, 0.0, 1.0))
+        out[2] = 2.0 * brake_pedal - 1.0
+        return out
+
+    def _apply_safe_training_controls(self, target_actions: np.ndarray) -> np.ndarray:
+        if self.steer_control_v3:
+            return apply_v3_control_limits(
+                target_actions,
+                self.current_actions,
+                self.norm_steer_at_max,
+                self.max_steer_deg,
+                **self._v3_limit_kwargs(),
+            )
+        return apply_safe_control_limits(
+            target_actions,
+            self.norm_steer_at_max,
+            self.max_steer_deg,
+            **self._safe_limit_kwargs(),
+        )
+
+    def get_executed_action_for_buffer(self) -> np.ndarray:
+        return np.array(self.raw_actions, dtype=np.float32).copy()
+
+    def _trigger_safe_emergency(self, reason: str):
+        if self._safe_emergency_active:
+            return
+        self._safe_emergency_active = True
+        self._force_episode_done = True
+        logger.warning("Safe training emergency: %s", reason)
+        try:
+            self.client.controls.set_controls(steer=0.0, acc=-1.0, brake=-1.0)
+            self.client.respond_to_server()
+        except Exception as exc:
+            logger.error("Safe training: failed to release controls: %s", exc)
+        if not self._safe_recover_used:
+            self._safe_recover_used = True
+            try:
+                self.recover_car()
+            except Exception as exc:
+                logger.error("Safe training: recover_car failed: %s", exc)
 
     def preprocess_actions(self, actions, current_actions):
         if self.use_relative_actions:
@@ -429,8 +648,13 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         # get state from the sim
         self.raw_actions = actions.copy()
 
-        # actions are deltas, update current controls
-        self.current_actions = self.preprocess_actions(actions, self.current_actions)
+        if getattr(self.config, 'action_schema_version', '') == 'normalized_policy_relu_v2':
+            self.current_actions = self.policy_action_to_internal(actions)
+        else:
+            self.current_actions = self.preprocess_actions(actions, self.current_actions)
+        if self.safe_training_mode:
+            self.current_actions = self._apply_safe_training_controls(self.current_actions)
+        self.executed_policy_action = self.get_executed_action_for_buffer()
         self.actions = self.current_actions
 
         self.client.controls.set_controls(steer=self.actions[0], acc=self.actions[1], brake=self.actions[2])
@@ -448,18 +672,49 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         if action is not None:
             self.set_actions(action)
 
-        state = self.client.step_sim()
+        try:
+            state = self.client.step_sim()
+        except Exception as exc:
+            if self.safe_training_mode:
+                logger.error("step_sim failed: %s", exc)
+                self._trigger_safe_emergency(f"telemetrie perdue: {exc}")
+                if self.states:
+                    state = self.states[-1].copy()
+                else:
+                    state = {
+                        "speed": 0.0,
+                        "done": 0,
+                        "steerAngle": 0.0,
+                        "world_position_x": 0.0,
+                        "world_position_y": 0.0,
+                        "NormalizedSplinePosition": 0.0,
+                        "numberOfTyresOut": 0,
+                        "currentTime": 0.0,
+                        "yaw": 0.0,
+                    }
+            else:
+                raise
+
         state["timestamp_env"] = time.perf_counter()
 
         self.state, buf_infos = self.expand_state(state)
+
+        if self.safe_training_mode and not self._safe_emergency_active:
+            steer_angle = abs(float(state.get("steerAngle", 0.0)))
+            if steer_angle > STEER_HARD_FAIL_DEG:
+                self._trigger_safe_emergency(
+                    f"steerAngle {steer_angle:.1f} > {STEER_HARD_FAIL_DEG}"
+                )
+                self.state["done"] = 1
+                buf_infos["terminated"] = True
 
         # add the current absolute actions to the state
         for i in range(self.action_dim):
             self.state[f'current_action_abs_{i:01d}'] = self.current_actions[i]
 
-        # save input actions
+        # save policy-space actions actually executed (for replay buffer / logs)
         for i in range(self.action_dim):
-            self.state[f'actions_{i:01d}'] = self.raw_actions[i]
+            self.state[f'actions_{i:01d}'] = self.executed_policy_action[i]
 
         # create obs
         obs, actions_diff = self.get_obs(state, self.states)
@@ -468,6 +723,9 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         #   Reward
         #
         self.state["reward"] = self.get_reward(self.state, actions_diff).item()
+        if self._last_reward_components:
+            self.state.update(self._last_reward_components)
+            buf_infos["reward_components"] = dict(self._last_reward_components)
 
         if (self.ep_steps % 50) == 0:
             logger.debug(f't: {self.ep_steps} speed: {state["speed"]:.2f}, oot: {state["out_of_track"]} '
@@ -503,22 +761,29 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         state['rl_point'] = rl_point.item()
         state['gap'] = gap[0]
 
+        state['out_of_track_ac'] = 1.0 if state['numberOfTyresOut'] > 2. else 0.0
         if self.enable_out_of_track_calculation:
             state['out_of_track_calc'] = 0.0 if self.track.track_occupancy_grid.is_inside_grid(point).item() > 0. else 1.0
-            state['out_of_track_ac'] = 1.0 if state['numberOfTyresOut'] > 2. else 0.0
+        else:
+            # LapInvalidated stays true for the rest of the lap after a kerb.
+            # Using it alone teleports cars that already recovered onto the straight.
+            state['out_of_track_calc'] = 1.0 if is_currently_off_track(
+                gap[0],
+                float(state.get('LapInvalidated') or 0.0) > 0.0,
+                self.oot_gap_m,
+                self.oot_soft_gap_m,
+            ) else 0.0
 
-        if self.use_ac_out_of_track:
-            # get oot from AC. If more than two wheels are out of track, then the car is out of track
+        if self.oot_mode == 'ac_shared' or (self.use_ac_out_of_track and self.oot_mode != 'local_gap'):
             state['out_of_track'] = state['out_of_track_ac']
         else:
-            # use the out of track from the calculation and not from AC
             state['out_of_track'] = state['out_of_track_calc']
 
         # sensors
         if self.enable_sensors:
             state["sensors"] = self.get_sensors(state)
             state["dist_to_border"] = state["sensors"].min()
-            if state['out_of_track_calc']:
+            if state['out_of_track']:
                 # if out of track the car can have the track exactly behind it.
                 # In this case, the sensors will not detect the track. Get the sensors on the other side
                 new_state = state.copy()
@@ -526,65 +791,206 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
                 new_sensors = self.get_sensors(new_state)
                 state["dist_to_border"] = min(state["dist_to_border"], new_sensors.min())
 
-        # TODO implement if needed
         state["going_backwards"] = 0.
+        state["_spline_delta_m"] = 0.0
+        try:
+            frac = float(state["NormalizedSplinePosition"])
+            prev = self._prev_spline
+            self._prev_spline = frac
+            track_len = float(getattr(self, "track_length", 0.0) or 0.0)
+            if prev is not None and track_len > 0.0 and 0.0 <= frac <= 1.0 and 0.0 <= prev <= 1.0:
+                delta_m = spline_delta_m(prev, frac, track_len)
+                state["_spline_delta_m"] = float(delta_m)
+                self._wrong_way_meters, going = update_wrong_way(
+                    self._wrong_way_meters, delta_m, self.wrong_way_confirm_m,
+                )
+                if going:
+                    state["going_backwards"] = 1.0
+        except (TypeError, ValueError, KeyError):
+            state["going_backwards"] = 0.
 
         #
         #   Check episode termination
         #
         # end of episode
         done = 0
+        done_reason = ""
         buf_infos = {}
         buf_infos['terminated'] = False  # used by TD MPC
         buf_infos['TimeLimit.truncated'] = False
+        # Vitesse réelle (m/s) pour le snapshot du collecteur : le champ était
+        # absent de `info` depuis la refonte neuroévolution, donc le collecteur
+        # lisait 0.0 en permanence (voitures « immobiles » + détection de blocage
+        # faussée).
+        buf_infos['speed'] = float(state.get('speed', 0.0))
+
+        # Count WALL-CLOCK driving time. The game's `timestamp_ac` telemetry jumps
+        # (dropped packets -> negative/huge deltas, seen as dt min=-116s std=28.8s)
+        # and silently stalls the 30 s timer: episodes ran 120 s instead of 30 s.
+        # The machine clock is stable AND identical across the 6 workers, so the
+        # respawns stay synchronized.
+        stamp = time.monotonic()
+        previous_stamp = getattr(self, "_termination_stamp", None)
+        elapsed = stamp - previous_stamp if previous_stamp is not None else 0.0
+        self._termination_stamp = stamp
+        elapsed = elapsed if 0.0 < elapsed <= 1.0 else 0.0
+        self._driving_elapsed = getattr(self, "_driving_elapsed", 0.0) + elapsed
+        elapsed_steps = elapsed * self.ctrl_rate
+        in_post_reset_grace = self._driving_elapsed <= float(getattr(self, "oot_grace_sec", 3.0))
+
+        if self._force_episode_done or self._pending_shift_fail:
+            logger.info("Terminate episode. Safe training forced stop")
+            done = 1
+            done_reason = "safe_emergency"
+            buf_infos['terminated'] = True
 
         if state["done"]:
-            ### TODO lap ended by AC.. se what to do here
             logger.info("Terminate. Lap ended by Assetto Corsa")
             done = 1
+            done_reason = done_reason or "ac_session_end"
 
-        if state['going_backwards'] > 0.:
-            logger.info("Terminate episode. Going backwards")
-            buf_infos['terminated'] = True
-            done = 1
+        if not in_post_reset_grace and state['going_backwards'] > 0.:
+            speed_kmh = float(state['speed']) * 3.6
+            if speed_kmh >= self.wrong_way_speed_kmh:
+                self._wrong_way_hold_steps += elapsed_steps
+            hold_needed = max(1, int(self.wrong_way_timeout_sec * self.ctrl_rate))
+            if self._wrong_way_hold_steps >= hold_needed:
+                logger.info(
+                    "Terminate episode. Going backwards for %.1fs",
+                    self.wrong_way_timeout_sec,
+                )
+                buf_infos['terminated'] = True
+                done = 1
+                done_reason = done_reason or "going_backwards"
+        elif state.get('going_backwards', 0.) <= 0.:
+            self._wrong_way_hold_steps = 0
 
-        if self.enable_out_of_track_termination and state['out_of_track']:
-            logger.info("Terminate episode. is_out_of_track")
-            logger.info(f"out_of_track. N wheels out: {state['numberOfTyresOut']}. LapDist: {state['LapDist']} x: {x:.2f} y: {y:.2f}")
-            buf_infos['terminated'] = True
-            done = 1
+        if self.enable_out_of_track_termination and state['out_of_track'] and not in_post_reset_grace:
+            self._oot_hold_steps += elapsed_steps
+            hold_needed = max(1, int(self.oot_hold_sec * self.ctrl_rate))
+            if self._oot_hold_steps >= hold_needed:
+                logger.info("Terminate episode. is_out_of_track")
+                logger.info(f"out_of_track. N wheels out: {state['numberOfTyresOut']}. LapDist: {state['LapDist']} x: {x:.2f} y: {y:.2f}")
+                buf_infos['terminated'] = True
+                done = 1
+                done_reason = done_reason or "out_of_track"
+        else:
+            self._oot_hold_steps = 0
 
         if self._max_episode_steps is not None:
-            if self.ep_steps > self._max_episode_steps:
-                logger.info(f"Terminate episode. Max steps {self.ep_steps}/{self._max_episode_steps}")
+            # Épisode en TEMPS RÉEL (30 s) plutôt qu'en nombre de pas : le nombre
+            # de pas varie avec le FPS du jeu (15-26 Hz), donc un comptage par pas
+            # ferait respawner les voitures à des moments différents. En temps
+            # réel, les 6 voitures respawnent ensemble toutes les 30 s.
+            ep_time_sec = float(getattr(self, "_driving_elapsed", 0.0))
+            if ep_time_sec >= float(getattr(self.config, "max_episode_py_time", 30.0)):
+                logger.info(
+                    "Terminate episode. Max real time %.1fs/%ds",
+                    ep_time_sec, float(getattr(self.config, "max_episode_py_time", 30.0)),
+                )
                 done = 1
+                done_reason = done_reason or "max_steps"
                 buf_infos['TimeLimit.truncated'] = True
 
         if self.max_laps_number and self.get_lap_count(self.states) > self.max_laps_number:
             logger.info(f"Terminate episode. Max number of laps reached {self.max_laps_number}")
             done = 1
+            done_reason = done_reason or "max_laps"
             buf_infos['TimeLimit.truncated'] = True
 
         # Episode terminates if the progress of agent is small
-        if self.enable_low_speed_termination and state['speed'] < TERMINAL_LIMIT_PROGRESS_SPEED:
-            self.termination_counter -= 1
-            if self.termination_counter <= 0:
-                logger.info("Race stopped. Speed too low")
-                buf_infos['terminated'] = True
-                done = 1
-            # else:
-            #     logger.info(f"Low speed. Will terminate in {self.termination_counter}...")
-        else:
-            self.termination_counter = int(TERMINAL_JUDGE_TIMEOUT * self.ctrl_rate)
+        if self.enable_low_speed_termination:
+            grace_steps = int(self.low_speed_grace_sec * self.ctrl_rate)
+            timeout_steps = int(self.low_speed_timeout_sec * self.ctrl_rate)
+            threshold_ms = self.low_speed_threshold_kmh / 3.6
+            from ac_workers.drive_truth import pedal_from_state, throttle_commanded_but_unacked
+
+            raw_throttle = 0.0
+            if getattr(self, "current_actions", None) is not None and len(self.current_actions) > 1:
+                raw_throttle = float(np.clip((self.current_actions[1] + 1.0) / 2.0, 0.0, 1.0))
+            unacked = throttle_commanded_but_unacked(raw_throttle, pedal_from_state(state))
+            speed_kmh = float(state['speed']) * 3.6
+            if speed_kmh >= self.moved_speed_kmh:
+                self._episode_has_moved = True
+            if self._driving_elapsed <= self.low_speed_grace_sec:
+                self.termination_counter = timeout_steps
+            elif unacked and not self._episode_has_moved:
+                # Pedal never reached this car: teleporting loops forever.
+                # Once the car has already driven, a wall-stop must still reset.
+                self.termination_counter = timeout_steps
+            elif state['speed'] < threshold_ms:
+                self.termination_counter -= elapsed_steps
+                if self.termination_counter <= 0:
+                    logger.info("Race stopped. Speed too low")
+                    buf_infos['terminated'] = True
+                    done = 1
+                    done_reason = done_reason or "low_speed"
+            else:
+                self.termination_counter = timeout_steps
+
+            pedal_dead = unacked and not self._episode_has_moved
+            if not in_post_reset_grace:
+                last_xy = self._stuck_last_xy
+                if last_xy is None:
+                    self._stuck_last_xy = (float(x), float(y))
+                    self._stuck_hold_steps = 0
+                else:
+                    moved = float(np.hypot(float(x) - last_xy[0], float(y) - last_xy[1]))
+                    if (
+                        not pedal_dead
+                        and speed_kmh < self.stuck_speed_kmh
+                        and moved < self.stuck_move_eps_m
+                    ):
+                        self._stuck_hold_steps += elapsed_steps
+                        if self._stuck_hold_steps >= max(1, int(self.stuck_timeout_sec * self.ctrl_rate)):
+                            logger.info(
+                                "Race stopped. Car stuck (speed=%.1f km/h moved=%.2fm)",
+                                speed_kmh,
+                                moved,
+                            )
+                            buf_infos['terminated'] = True
+                            done = 1
+                            done_reason = done_reason or "stuck"
+                    else:
+                        self._stuck_hold_steps = 0
+                        self._stuck_last_xy = (float(x), float(y))
+                if not pedal_dead:
+                    self._no_progress_m += max(0.0, float(state.get("_spline_delta_m") or 0.0))
+                    if self._no_progress_m >= self.no_progress_credit_m:
+                        self._no_progress_m = 0.0
+                        self._no_progress_hold_steps = 0
+                    else:
+                        self._no_progress_hold_steps += elapsed_steps
+                        if self._no_progress_hold_steps >= max(
+                            1, int(self.no_progress_timeout_sec * self.ctrl_rate)
+                        ):
+                            logger.info(
+                                "Race stopped. No track progress for %.1fs",
+                                self.no_progress_timeout_sec,
+                            )
+                            buf_infos['terminated'] = True
+                            done = 1
+                            done_reason = done_reason or "stuck"
+                else:
+                    self._no_progress_hold_steps = 0
+                    self._no_progress_m = 0.0
+            else:
+                self._stuck_hold_steps = 0
+                self._stuck_last_xy = (float(x), float(y))
+                self._no_progress_hold_steps = 0
+                self._no_progress_m = 0.0
 
         # check gap
-        if self.max_gap and np.abs(gap) > self.max_gap:
+        if not in_post_reset_grace and self.max_gap and np.abs(gap) > self.max_gap:
             logger.info(f"Race stopped. Gap too big ({gap})")
             done = 1
+            done_reason = done_reason or "max_gap"
 
         # extra channels in the info variable
         if self.use_obs_extra:
             buf_infos['obs_extra'] = self.get_extra_observations(state)
+        buf_infos['done_reason'] = done_reason
+        buf_infos['episode_steps'] = self.ep_steps
         if done:
             # used by SB3 save final observation where user can get it, then reset
             #buf_infos['terminal_observation'] = obs.copy()
@@ -604,19 +1010,117 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         return self.obs_extra_enabled_channels.index(channel_name)
 
     def get_reward(self, state, actions_diff):
+        if getattr(self.config, 'reward_mode', '') == 'signed_progress_v1':
+            _apply_reward_override(self.config)
+            components = progress_reward(
+                getattr(self, '_progress_previous_state', None), state,
+                float(self.track_length), self.config, actions_diff,
+                tracker=self._clean_lap_tracker)
+            self._progress_previous_state = dict(state)
+            self._last_reward_components = components
+            if components.get("completed_clean_sector"):
+                logger.info("Clean sector bonus %.1f", components.get("reward_clean_sector", 0.0))
+            if components.get("completed_clean_lap"):
+                logger.info(
+                    "Clean lap bonus %.1f (lap_time=%.1fs)",
+                    components.get("reward_clean_lap", 0.0),
+                    components.get("clean_lap_time_sec", 0.0),
+                )
+            return np.array([components['reward']])
         speed = 3.6 * np.array(state['speed'])
-        out_of_track = state["out_of_track_calc"]
-        dist_to_border = state["dist_to_border"]
 
-        r = speed
+        r_progress = speed
         if self.use_reference_line_in_reward:
-            r *= ( 1.0 - (np.abs( state["gap"]) / 12.00))
-        r /= 300. # normalize
+            abs_gap = float(np.abs(state["gap"]))
+            if self.reward_gap_factor_sigma > 0.0:
+                # Smooth Lorentzian: never zero, always some progress signal.
+                gap_factor = 1.0 / (1.0 + (abs_gap / self.reward_gap_factor_sigma) ** 2)
+            else:
+                gap_factor = max(0.0, 1.0 - abs_gap / 12.0)
+            r_progress = r_progress * gap_factor
+        r_progress = r_progress / 300.0
+
+        gap_penalty = 0.0
+        steer_penalty = 0.0
+        oot_penalty = 0.0
+        idle_penalty = 0.0
+        brake_penalty = 0.0
+        wrong_way_penalty = 0.0
+        centerline_bonus = 0.0
+        correct_steer_bonus = 0.0
+
+        if self.reward_v3:
+            gap_f = float(state["gap"])
+            abs_gap_f = abs(gap_f)
+            gap_penalty = min(
+                self.reward_gap_penalty_coef * abs_gap_f,
+                self.reward_gap_penalty_cap,
+            )
+            steer_angle = float(state.get("steerAngle", 0.0))
+            steer_abs = abs(steer_angle)
+            steer_ref_deg = self.steer_limit_deg if self.steer_control_v3 else self.safe_steer_deg
+            steer_penalty = self.reward_steer_penalty_coef * (steer_abs / steer_ref_deg) ** 2
+            if state.get("done") and state.get("out_of_track"):
+                oot_penalty = self.reward_oot_terminal_penalty
+            speed_kmh = float(np.asarray(speed).reshape(-1)[0])
+            if self.reward_idle_penalty > 0.0:
+                if speed_kmh < self.low_speed_threshold_kmh:
+                    idle_penalty = self.reward_idle_penalty
+            if self.reward_brake_penalty_coef > 0.0:
+                brake = float(state.get("brakeStatus", 0.0) or 0.0)
+                if brake > 0.0:
+                    scale = 1.0 if speed_kmh < self.reward_brake_penalty_speed_kmh else 0.25
+                    brake_penalty = self.reward_brake_penalty_coef * (brake ** 2) * scale
+            # Same-sign gap×steer = turning further off the line.
+            if self.reward_wrong_way_steer_coef > 0.0 and gap_f * steer_angle > 0.0:
+                wrong_way_penalty = (
+                    self.reward_wrong_way_steer_coef
+                    * min(abs_gap_f, self.reward_gap_penalty_cap * 20.0)
+                    * min(steer_abs / max(steer_ref_deg, 1e-3), 1.0)
+                )
+            # Positive reward for being near the racing line (carrot).
+            if self.reward_centerline_bonus_coef > 0.0:
+                centerline_bonus = self.reward_centerline_bonus_coef * max(
+                    0.0, 1.0 - abs_gap_f / self.reward_centerline_bonus_width
+                )
+            # Positive reward for steering TOWARD the line (opposite-sign gap×steer).
+            if self.reward_correct_steer_bonus_coef > 0.0 and gap_f * steer_angle < 0.0:
+                correct_steer_bonus = (
+                    self.reward_correct_steer_bonus_coef
+                    * min(abs_gap_f / 12.0, 1.0)
+                    * min(steer_abs / max(steer_ref_deg, 1e-3), 1.0)
+                )
+
+        r = (
+            r_progress
+            + centerline_bonus
+            + correct_steer_bonus
+            - gap_penalty
+            - steer_penalty
+            - oot_penalty
+            - idle_penalty
+            - brake_penalty
+            - wrong_way_penalty
+        )
 
         if self.penalize_actions_diff:
             action_difference_penalty = np.linalg.norm(actions_diff, ord=2)
             r -= action_difference_penalty * self.penalize_actions_diff_coef
-        r = r.reshape(-1)  # [N, 1] -> [N]
+
+        self._last_reward_components = {
+            "reward_progress": float(np.asarray(r_progress).reshape(-1)[0]),
+            "reward_centerline_bonus": float(centerline_bonus),
+            "reward_correct_steer_bonus": float(correct_steer_bonus),
+            "reward_gap_penalty": float(gap_penalty),
+            "reward_steer_penalty": float(steer_penalty),
+            "reward_oot_penalty": float(oot_penalty),
+            "reward_idle_penalty": float(idle_penalty),
+            "reward_brake_penalty": float(brake_penalty),
+            "reward_wrong_way_steer_penalty": float(wrong_way_penalty),
+            "reward": float(np.asarray(r).reshape(-1)[0]),
+        }
+
+        r = np.asarray(r).reshape(-1)
         return r
 
     def recover_car(self):
@@ -627,6 +1131,7 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
 
     def reset(self, seed=None, verbose=False):
         self.end_of_episode_stats()
+        self._progress_previous_state = None
         self.stats_saved = False
 
         self.n_episodes += 1
@@ -662,7 +1167,13 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
 
         self.client.reset(self.send_reset_at_start)
 
-        self.termination_counter = int(TERMINAL_JUDGE_TIMEOUT * self.ctrl_rate)
+        self._safe_emergency_active = False
+        self._safe_recover_used = False
+        self._force_episode_done = False
+        self._pending_shift_fail = False
+
+        self.termination_counter = int(self.low_speed_timeout_sec * self.ctrl_rate)
+        self._reset_termination_trackers()
         self.episode_saved = False
         self.is_out_of_track = False
         self.current_actions = np.array( [0.0, -1.0, -1.0] )
@@ -678,8 +1189,17 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         obs, _, _, info = self.step(self.start_actions)
         self.info = info
 
+        if self.auto_shift_to_first:
+            if not auto_shift_neutral_to_first(self):
+                self._pending_shift_fail = True
+                self._force_episode_done = True
+                logger.error("Reset: N->1ere impossible, episode will terminate cleanly")
+            obs, _, _, info = self.step(self.start_actions)
+            self.info = info
+
         self.ep_reward = 0.
         self.ep_steps = 0  # reset steps after flushing the actions
+        self._reset_termination_trackers()
         return obs
 
     def get_info(self):
@@ -700,65 +1220,17 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         return torch.from_numpy(self.action_space.sample().astype(np.float32))
 
     def get_obs(self, state, history=None):
-        """
-        if history is None use the current episode history, else use the history passed as argument.append()
-        """
-        def get_basic_obs(state):
-            obs = np.array( [state[ch] for ch in self.obs_enabled_channels] )
-            obs = obs / self.obs_channels_scales
+        """Observation réduite : 3 télémétries + 5 rayons LiDAR = 8 valeurs."""
+        obs = np.array([state[ch] for ch in self.obs_enabled_channels], dtype=np.float32)
+        obs = obs / self.obs_channels_scales
 
-            if self.enable_sensors:
-                obs = np.hstack([obs, state['sensors'] / MAX_RAY_LEN ])
-            return obs
+        if self.enable_sensors:
+            rays = self.lidar.cast(
+                state["world_position_x"], state["world_position_y"], state["yaw"]
+            )
+            obs = np.hstack([obs, rays])
 
-        obs = get_basic_obs(state)
-
-        if state["out_of_track"]:
-            obs = np.hstack([obs, 1.0])
-        else:
-            obs = np.hstack([obs, 0.0])
-
-        # add curvature look ahead
-        LAC = self.ref_lap.get_curvature_segment(state['LapDist'],
-                                                    CURV_LOOK_AHEAD_DISTANCE,       # meters ahead
-                                                    CURV_LOOK_AHEAD_VECTOR_SIZE)    # size of the vector downsampled
-        obs = np.hstack([obs, LAC / CURV_NORMALIZATION_CONSTANT])
-
-
-        if history is None:
-            history = self.states
-
-        # add previous absolute actions. Not including the current action (the one that got the sim to the current state)
-        if len(history) < PAST_ACTIONS_WINDOW:
-            filler = np.zeros(PAST_ACTIONS_WINDOW*self.action_dim)
-            obs = np.hstack([obs, filler])
-            actions_diff = np.zeros(self.action_dim)
-        else:
-            current_controls_steer_prev = np.array( [history[i]['steerAngle'] / self.obs_channels_info['steerAngle'] for i in range(-PAST_ACTIONS_WINDOW,0) ]) # if PAST_ACTIONS_WINDOW=3; -3, -2, -1
-            current_controls_pedal_prev = np.array( [history[i]['accStatus'] for i in range(-PAST_ACTIONS_WINDOW,0) ])
-            current_controls_brake_prev = np.array( [history[i]['brakeStatus'] for i in range(-PAST_ACTIONS_WINDOW,0) ])
-            obs = np.hstack([obs, current_controls_steer_prev, current_controls_pedal_prev, current_controls_brake_prev])
-            actions_diff = np.array([(state['steerAngle']  - history[-1]['steerAngle'])  / self.obs_channels_info['steerAngle'],
-                                        (state['accStatus']   -  history[-1]['accStatus']),
-                                        (state['brakeStatus'] - history[-1]['brakeStatus'])])
-
-        # add last action to the observation. Action that got the sim to the current state
-        obs = np.hstack([obs, state['steerAngle'] / self.obs_channels_info['steerAngle'], state['accStatus'], state['brakeStatus']])
-
-        #
-        if self.add_previous_obs_to_state:
-            if len(history) < PAST_ACTIONS_WINDOW:
-                prev_obs = np.zeros(PAST_ACTIONS_WINDOW * self.previous_obs_to_state_dim)
-            else:
-                prev_obs = []
-                for i in range(-PAST_ACTIONS_WINDOW, 0):
-                    prev_obs.append(get_basic_obs(history[i]))
-                prev_obs = np.hstack(prev_obs)
-            obs = np.hstack([obs, prev_obs])
-
-        if self.config.enable_task_id_in_obs:
-            obs = np.hstack([obs, self.tasks_ids.get_task_one_hot(self.get_task_id())])
-        return obs, actions_diff
+        return obs, np.zeros(self.action_dim, dtype=np.float32)
 
     def render(self):
         pass
@@ -770,12 +1242,9 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
         return self.current_task_id
 
     def get_sensors(self, state, do_plots=False):
-        intersections, vector_lengths, filtered_walls, points, rectangle\
-            = self.sensors.get_intersections_and_distances_to_wall(state["world_position_x"], state["world_position_y"], state['yaw'])
-        if do_plots:
-            sensors_ray_casting.make_plots(self.sensors.scene, filtered_walls, points, intersections, state["world_position_x"],
-                                           state["world_position_y"], rectangle, self.sensors.number_of_rays)
-        return vector_lengths
+        return self.lidar.cast(
+            state["world_position_x"], state["world_position_y"], state["yaw"]
+        )
 
     def show_debug_state(self, state, do_plots=True):
         if self.enable_sensors:
@@ -894,4 +1363,3 @@ class AssettoCorsaEnv(Env, gym_utils.EzPickle):
 
     def set_eval_mode(self):
         self.max_laps_number = self.config.eval_number_of_laps
-        self.use_ac_out_of_track = True

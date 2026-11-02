@@ -1,0 +1,452 @@
+﻿2026-06-29T17:57:24 janitor started pid=2896 repo=C:\Leo projet\Assetto Corsa ai
+2026-06-29T18:17:35 processing request 1782749853578-25940 devices=6
+2026-06-29T18:17:45 result 1782749853578-25940 ok=True verified=True
+2026-06-29T18:33:44 processing request 1782750823022-18816 devices=6
+2026-06-29T18:33:54 result 1782750823022-18816 ok=True verified=True
+2026-06-29T19:01:10 processing request 1782752469839-22616 devices=6
+2026-06-29T19:01:20 result 1782752469839-22616 ok=True verified=True
+2026-06-29T19:43:44 processing request 1782755023100-17300 devices=6
+2026-06-29T19:43:53 result 1782755023100-17300 ok=True verified=True
+2026-06-29T20:16:30 processing request 1782756989537-10616 devices=6
+2026-06-29T20:16:40 result 1782756989537-10616 ok=True verified=True
+2026-06-29T20:50:41 processing request 1782759039750-22324 devices=6
+2026-06-29T20:50:51 result 1782759039750-22324 ok=True verified=True
+2026-06-29T20:54:46 processing request 1782759284796-22324 devices=6
+2026-06-29T20:54:56 result 1782759284796-22324 ok=True verified=True
+2026-06-29T21:00:58 processing request 1782759656995-22324 devices=6
+2026-06-29T21:01:08 result 1782759656995-22324 ok=True verified=True
+2026-06-29T21:02:12 processing request 1782759732601-22324 devices=6
+2026-06-29T21:02:22 result 1782759732601-22324 ok=True verified=True
+2026-06-30T19:35:46 janitor started pid=2820 repo=C:\Leo projet\Assetto Corsa ai
+2026-06-30T19:35:47 processing request 1782759732601-22324 devices=6
+2026-06-30T19:35:58 result 1782759732601-22324 ok=True verified=True
+2026-07-01T22:23:14 janitor started pid=2864 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-01T22:23:16 processing request 1782759732601-22324 devices=6
+2026-07-01T22:23:28 result 1782759732601-22324 ok=True verified=True
+2026-07-02T19:02:33 janitor started pid=2816 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-02T19:02:33 processing request 1782759732601-22324 devices=6
+2026-07-02T19:02:44 result 1782759732601-22324 ok=True verified=True
+2026-07-04T16:29:56 janitor started pid=2892 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-04T16:29:56 processing request 1782759732601-22324 devices=6
+2026-07-04T16:30:07 result 1782759732601-22324 ok=True verified=True
+2026-07-05T13:31:44 janitor started pid=2952 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-05T13:31:45 processing request 1782759732601-22324 devices=6
+2026-07-05T13:31:56 result 1782759732601-22324 ok=True verified=True
+2026-07-06T19:00:42 janitor started pid=2796 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-06T19:00:42 processing request 1782759732601-22324 devices=6
+2026-07-06T19:00:53 result 1782759732601-22324 ok=True verified=True
+2026-07-12T20:21:00 janitor started pid=2872 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-12T20:21:00 processing request 1782759732601-22324 devices=6
+2026-07-12T20:21:11 result 1782759732601-22324 ok=True verified=True
+2026-07-12T22:20:40 janitor started pid=2892 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-12T22:20:41 processing request 1782759732601-22324 devices=6
+2026-07-12T22:20:54 result 1782759732601-22324 ok=True verified=True
+2026-07-13T16:23:01 processing request 1783952580676-4588 devices=6
+2026-07-13T16:23:11 result 1783952580676-4588 ok=True verified=True
+2026-07-13T19:04:00 janitor started pid=2820 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-13T19:04:01 processing request 1783952580676-4588 devices=6
+2026-07-13T19:04:11 result 1783952580676-4588 ok=True verified=True
+2026-07-13T22:07:08 janitor started pid=2840 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-13T22:07:09 processing request 1783952580676-4588 devices=6
+2026-07-13T22:07:22 result 1783952580676-4588 ok=True verified=True
+2026-07-13T22:22:08 janitor started pid=2840 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-13T22:22:09 processing request 1783952580676-4588 devices=6
+2026-07-13T22:22:21 result 1783952580676-4588 ok=True verified=True
+2026-07-13T22:41:37 janitor started pid=2836 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-13T22:41:38 processing request 1783952580676-4588 devices=6
+2026-07-13T22:41:50 result 1783952580676-4588 ok=True verified=True
+2026-07-13T23:07:26 janitor started pid=2812 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-13T23:07:28 processing request 1783952580676-4588 devices=6
+2026-07-13T23:07:40 result 1783952580676-4588 ok=True verified=True
+2026-07-14T00:00:24 janitor started pid=2888 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-14T00:00:25 processing request 1783952580676-4588 devices=6
+2026-07-14T00:00:37 result 1783952580676-4588 ok=True verified=True
+2026-07-14T00:24:27 janitor started pid=2868 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-14T00:24:29 processing request 1783952580676-4588 devices=6
+2026-07-14T00:24:41 result 1783952580676-4588 ok=True verified=True
+2026-07-14T14:57:25 janitor started pid=2800 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-14T14:57:25 processing request 1783952580676-4588 devices=6
+2026-07-14T14:57:36 result 1783952580676-4588 ok=True verified=True
+2026-07-14T20:12:37 janitor started pid=2824 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-14T20:12:39 processing request 1783952580676-4588 devices=6
+2026-07-14T20:12:51 result 1783952580676-4588 ok=True verified=True
+2026-07-15T17:06:14 janitor started pid=2564 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-15T17:06:14 processing request 1783952580676-4588 devices=6
+2026-07-15T17:06:26 result 1783952580676-4588 ok=True verified=True
+2026-07-16T01:36:18 janitor started pid=4052 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-16T01:36:18 processing request 1783952580676-4588 devices=6
+2026-07-16T01:36:32 result 1783952580676-4588 ok=True verified=True
+2026-07-16T01:37:51 janitor started pid=3808 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-16T01:37:52 processing request 1783952580676-4588 devices=6
+2026-07-16T13:52:45 janitor started pid=2828 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-16T13:52:45 processing request 1783952580676-4588 devices=6
+2026-07-16T13:52:59 result 1783952580676-4588 ok=True verified=True
+2026-07-17T00:42:29 janitor started pid=2816 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-17T00:42:30 processing request 1783952580676-4588 devices=6
+2026-07-17T00:42:43 result 1783952580676-4588 ok=True verified=True
+2026-07-17T13:53:43 janitor started pid=2780 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-17T13:53:43 processing request 1783952580676-4588 devices=6
+2026-07-17T13:53:57 result 1783952580676-4588 ok=True verified=True
+2026-07-18T17:25:10 janitor started pid=2796 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-18T17:25:10 processing request 1783952580676-4588 devices=6
+2026-07-18T17:25:22 result 1783952580676-4588 ok=True verified=True
+2026-07-18T17:49:21 janitor started pid=2812 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-18T17:49:23 processing request 1783952580676-4588 devices=6
+2026-07-18T17:49:35 result 1783952580676-4588 ok=True verified=True
+2026-07-18T23:13:05 janitor started pid=2884 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-18T23:13:06 processing request 1783952580676-4588 devices=6
+2026-07-18T23:13:18 result 1783952580676-4588 ok=True verified=True
+2026-07-21T15:38:49 janitor started pid=2916 repo=C:\Leo projet\Assetto Corsa ai
+2026-07-21T15:38:50 processing request 1783952580676-4588 devices=6
+2026-07-21T15:39:14 result 1783952580676-4588 ok=True verified=True
+2026-08-08T10:54:01 janitor started pid=2964 repo=C:\Leo projet\Assetto Corsa ai
+2026-08-08T10:54:01 processing request 1783952580676-4588 devices=6
+2026-08-08T10:54:17 result 1783952580676-4588 ok=True verified=True
+2026-09-08T13:20:15 janitor started pid=3080 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-08T13:20:58 processing request 1783952580676-4588 devices=6
+2026-09-08T13:21:24 result 1783952580676-4588 ok=True verified=True
+2026-09-08T13:43:06 janitor started pid=2956 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-08T13:43:10 processing request 1783952580676-4588 devices=6
+2026-09-08T13:43:22 result 1783952580676-4588 ok=True verified=True
+2026-09-08T14:33:56 janitor started pid=2912 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-08T14:33:57 processing request 1783952580676-4588 devices=6
+2026-09-08T14:34:10 result 1783952580676-4588 ok=True verified=True
+2026-09-08T16:32:20 janitor started pid=3832 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-08T16:32:24 processing request 1783952580676-4588 devices=6
+2026-09-08T16:32:37 result 1783952580676-4588 ok=True verified=True
+2026-09-08T20:37:29 janitor started pid=2812 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-08T20:37:29 processing request 1783952580676-4588 devices=6
+2026-09-08T20:37:42 result 1783952580676-4588 ok=True verified=True
+2026-09-09T13:58:57 janitor started pid=4112 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-09T13:58:58 processing request 1783952580676-4588 devices=6
+2026-09-09T13:59:10 result 1783952580676-4588 ok=True verified=True
+2026-09-09T13:59:53 janitor started pid=3860 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-09T13:59:54 processing request 1783952580676-4588 devices=6
+2026-09-09T14:00:05 result 1783952580676-4588 ok=True verified=True
+2026-09-09T15:25:33 processing request 1788960332929-25556 devices=6
+2026-09-09T15:25:43 result 1788960332929-25556 ok=True verified=True
+2026-09-09T15:27:53 processing request 1788960473130-25556 devices=6
+2026-09-09T15:28:03 result 1788960473130-25556 ok=True verified=True
+2026-09-09T20:13:46 processing request 1788977625647-25556 devices=6
+2026-09-09T20:13:56 result 1788977625647-25556 ok=True verified=True
+2026-09-09T20:14:26 processing request 1788977665898-25556 devices=6
+2026-09-09T20:14:35 result 1788977665898-25556 ok=True verified=False
+2026-09-09T20:18:13 processing request 1788977892345-25556 devices=6
+2026-09-09T20:18:22 result 1788977892345-25556 ok=True verified=True
+2026-09-09T23:13:42 janitor started pid=4044 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-09T23:13:42 processing request 1788977892345-25556 devices=6
+2026-09-09T23:13:53 result 1788977892345-25556 ok=True verified=True
+2026-09-09T23:14:38 janitor started pid=3800 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-09T23:14:38 processing request 1788977892345-25556 devices=6
+2026-09-09T23:15:21 janitor started pid=3808 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-09T23:15:22 processing request 1788977892345-25556 devices=6
+2026-09-09T23:15:34 result 1788977892345-25556 ok=True verified=True
+2026-09-10T10:02:46 janitor started pid=2900 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-10T10:02:47 processing request 1788977892345-25556 devices=6
+2026-09-10T10:03:01 result 1788977892345-25556 ok=True verified=True
+2026-09-10T13:22:19 processing request 1789039338500-5748 devices=6
+2026-09-10T13:22:29 result 1789039338500-5748 ok=True verified=True
+2026-09-10T13:35:49 processing request 1789040148531-17660 devices=6
+2026-09-10T13:35:59 result 1789040148531-17660 ok=True verified=True
+2026-09-10T13:49:31 processing request 1789040971043-22752 devices=6
+2026-09-10T13:49:41 result 1789040971043-22752 ok=True verified=True
+2026-09-10T14:28:24 processing request 1789043302496-14012 devices=6
+2026-09-10T14:28:34 result 1789043302496-14012 ok=True verified=True
+2026-09-10T15:04:42 processing request 1789045481494-23632 devices=6
+2026-09-10T15:04:52 result 1789045481494-23632 ok=True verified=True
+2026-09-10T16:02:03 processing request 1789048921618-304 devices=6
+2026-09-10T16:02:12 result 1789048921618-304 ok=True verified=True
+2026-09-10T16:05:42 processing request 1789049141434-304 devices=6
+2026-09-10T16:05:51 result 1789049141434-304 ok=True verified=True
+2026-09-10T16:06:05 processing request 1789049165383-304 devices=6
+2026-09-10T16:06:15 result 1789049165383-304 ok=True verified=True
+2026-09-10T16:11:47 processing request 1789049506027-17468 devices=6
+2026-09-10T16:11:56 result 1789049506027-17468 ok=True verified=True
+2026-09-10T16:12:51 processing request 1789049570527-17468 devices=6
+2026-09-10T16:13:01 result 1789049570527-17468 ok=True verified=True
+2026-09-10T16:38:47 processing request 1789051126882-23096 devices=6
+2026-09-10T16:38:56 result 1789051126882-23096 ok=True verified=True
+2026-09-10T16:38:58 processing request 1789051138019-23096 devices=6
+2026-09-10T16:39:08 result 1789051138019-23096 ok=True verified=True
+2026-09-10T16:42:55 processing request 1789051375709-9628 devices=6
+2026-09-10T16:43:05 result 1789051375709-9628 ok=True verified=True
+2026-09-10T16:43:35 processing request 1789051414939-9628 devices=6
+2026-09-10T16:43:45 result 1789051414939-9628 ok=True verified=True
+2026-09-10T16:44:15 processing request 1789051455220-9628 devices=6
+2026-09-10T16:44:25 result 1789051455220-9628 ok=True verified=True
+2026-09-10T16:44:55 processing request 1789051495402-9628 devices=6
+2026-09-10T16:45:05 result 1789051495402-9628 ok=True verified=True
+2026-09-10T16:45:35 processing request 1789051534559-9628 devices=6
+2026-09-10T16:45:45 result 1789051534559-9628 ok=True verified=True
+2026-09-10T16:50:55 processing request 1789051854251-20576 devices=6
+2026-09-10T16:51:04 result 1789051854251-20576 ok=True verified=True
+2026-09-10T16:51:34 processing request 1789051893858-20576 devices=6
+2026-09-10T16:51:44 result 1789051893858-20576 ok=True verified=True
+2026-09-10T16:52:14 processing request 1789051934110-20576 devices=6
+2026-09-10T16:52:24 result 1789051934110-20576 ok=True verified=True
+2026-09-10T16:52:54 processing request 1789051973807-20576 devices=6
+2026-09-10T16:53:04 result 1789051973807-20576 ok=True verified=True
+2026-09-10T16:53:34 processing request 1789052013585-20576 devices=6
+2026-09-10T16:53:44 result 1789052013585-20576 ok=True verified=True
+2026-09-10T17:07:52 processing request 1789052871040-19908 devices=6
+2026-09-10T17:08:02 result 1789052871040-19908 ok=True verified=True
+2026-09-10T17:08:32 processing request 1789052912542-19908 devices=6
+2026-09-10T17:08:42 result 1789052912542-19908 ok=True verified=True
+2026-09-10T17:09:14 processing request 1789052952629-19908 devices=6
+2026-09-10T17:09:24 result 1789052952629-19908 ok=True verified=True
+2026-09-10T17:10:38 processing request 1789053037346-19908 devices=6
+2026-09-10T17:10:48 result 1789053037346-19908 ok=True verified=True
+2026-09-10T17:39:47 processing request 1789054786824-19908 devices=6
+2026-09-10T17:39:57 result 1789054786824-19908 ok=True verified=True
+2026-09-10T17:39:59 processing request 1789054798949-19908 devices=6
+2026-09-10T17:40:09 result 1789054798949-19908 ok=True verified=True
+2026-09-10T18:32:16 processing request 1789057935661-14756 devices=6
+2026-09-10T18:32:26 result 1789057935661-14756 ok=True verified=True
+2026-09-10T19:56:29 processing request 1789062988747-11188 devices=6
+2026-09-10T19:56:39 result 1789062988747-11188 ok=True verified=True
+2026-09-10T20:08:09 processing request 1789063688679-24800 devices=6
+2026-09-10T20:08:18 result 1789063688679-24800 ok=True verified=True
+2026-09-10T20:46:55 processing request 1789066014684-23664 devices=6
+2026-09-10T20:47:05 result 1789066014684-23664 ok=True verified=True
+2026-09-10T22:32:43 processing request 1789072362804-16504 devices=6
+2026-09-10T22:32:53 result 1789072362804-16504 ok=True verified=True
+2026-09-10T23:33:24 processing request 1789076002305-6444 devices=6
+2026-09-10T23:33:34 result 1789076002305-6444 ok=True verified=True
+2026-09-11T00:23:39 processing request 1789079017819-24004 devices=6
+2026-09-11T00:23:49 result 1789079017819-24004 ok=True verified=True
+2026-09-11T00:32:34 janitor started pid=2824 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-11T00:32:37 processing request 1789079017819-24004 devices=6
+2026-09-11T00:32:49 result 1789079017819-24004 ok=True verified=True
+2026-09-11T14:07:36 janitor started pid=2780 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-11T14:07:36 processing request 1789079017819-24004 devices=6
+2026-09-11T14:07:49 result 1789079017819-24004 ok=True verified=True
+2026-09-12T13:12:03 janitor started pid=2776 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-12T13:12:03 processing request 1789079017819-24004 devices=6
+2026-09-12T13:12:14 result 1789079017819-24004 ok=True verified=True
+2026-09-14T09:55:56 janitor started pid=2816 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-14T09:55:56 processing request 1789079017819-24004 devices=6
+2026-09-14T09:56:10 result 1789079017819-24004 ok=True verified=True
+2026-09-14T21:20:35 janitor started pid=2708 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-14T21:20:35 processing request 1789079017819-24004 devices=6
+2026-09-14T21:20:47 result 1789079017819-24004 ok=True verified=True
+2026-09-15T15:10:54 janitor started pid=2800 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-15T15:10:54 processing request 1789079017819-24004 devices=6
+2026-09-15T15:11:14 result 1789079017819-24004 ok=True verified=True
+2026-09-17T20:24:46 janitor started pid=3048 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-17T20:24:46 processing request 1789079017819-24004 devices=6
+2026-09-17T20:25:29 janitor started pid=3828 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-17T20:25:30 processing request 1789079017819-24004 devices=6
+2026-09-17T20:25:58 result 1789079017819-24004 ok=True verified=True
+2026-09-18T14:52:28 janitor started pid=2740 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-18T14:52:28 processing request 1789079017819-24004 devices=6
+2026-09-18T14:52:39 result 1789079017819-24004 ok=True verified=True
+2026-09-18T16:45:56 janitor started pid=2772 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-18T16:45:56 processing request 1789079017819-24004 devices=6
+2026-09-18T16:46:09 result 1789079017819-24004 ok=True verified=True
+2026-09-18T19:16:53 janitor started pid=2700 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-18T19:16:53 processing request 1789079017819-24004 devices=6
+2026-09-18T19:17:06 result 1789079017819-24004 ok=True verified=True
+2026-09-19T09:01:48 janitor started pid=2776 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-19T09:01:48 processing request 1789079017819-24004 devices=6
+2026-09-19T09:01:59 result 1789079017819-24004 ok=True verified=True
+2026-09-20T09:02:08 janitor started pid=2680 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-20T09:02:08 processing request 1789079017819-24004 devices=6
+2026-09-20T09:02:22 result 1789079017819-24004 ok=True verified=True
+2026-09-20T09:04:03 janitor started pid=2844 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-20T09:04:07 processing request 1789079017819-24004 devices=6
+2026-09-20T09:04:24 result 1789079017819-24004 ok=True verified=True
+2026-09-22T21:49:36 janitor started pid=2756 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-22T21:49:36 processing request 1789079017819-24004 devices=6
+2026-09-22T21:49:49 result 1789079017819-24004 ok=True verified=True
+2026-09-22T23:29:51 processing request 1790112590267-10768 devices=6
+2026-09-22T23:30:01 result 1790112590267-10768 ok=True verified=False
+2026-09-22T23:44:47 processing request 1790113485891-10768 devices=6
+2026-09-24T17:05:28 janitor started pid=2700 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-24T17:05:28 processing request 1790113485891-10768 devices=6
+2026-09-24T17:05:42 result 1790113485891-10768 ok=True verified=True
+2026-09-25T16:04:23 janitor started pid=2856 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-25T16:04:24 processing request 1790113485891-10768 devices=6
+2026-09-25T16:04:44 result 1790113485891-10768 ok=True verified=True
+2026-09-25T16:41:30 janitor started pid=2780 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-25T16:41:30 processing request 1790113485891-10768 devices=6
+2026-09-25T16:41:44 result 1790113485891-10768 ok=True verified=True
+2026-09-26T11:07:58 janitor started pid=2792 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-26T11:07:58 processing request 1790113485891-10768 devices=6
+2026-09-26T11:08:09 result 1790113485891-10768 ok=True verified=True
+2026-09-26T16:32:40 janitor started pid=2764 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-26T16:32:40 processing request 1790113485891-10768 devices=6
+2026-09-26T16:32:50 result 1790113485891-10768 ok=True verified=True
+2026-09-26T16:47:36 janitor started pid=2792 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-26T16:47:36 processing request 1790113485891-10768 devices=6
+2026-09-26T16:47:48 result 1790113485891-10768 ok=True verified=True
+2026-09-27T11:43:08 janitor started pid=2848 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-27T11:43:08 processing request 1790113485891-10768 devices=6
+2026-09-27T11:43:19 result 1790113485891-10768 ok=True verified=True
+2026-09-28T18:07:50 janitor started pid=2820 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-28T18:07:50 processing request 1790113485891-10768 devices=6
+2026-09-28T18:08:02 result 1790113485891-10768 ok=True verified=True
+2026-09-30T17:41:14 janitor started pid=2804 repo=C:\Leo projet\Assetto Corsa ai
+2026-09-30T17:41:14 processing request 1790113485891-10768 devices=6
+2026-09-30T17:41:25 result 1790113485891-10768 ok=True verified=True
+2026-10-01T15:19:16 janitor started pid=2716 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-01T15:19:27 processing request 1790113485891-10768 devices=6
+2026-10-01T15:19:39 result 1790113485891-10768 ok=True verified=True
+2026-10-02T15:40:09 janitor started pid=2824 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-02T15:40:09 processing request 1790113485891-10768 devices=6
+2026-10-02T15:40:20 result 1790113485891-10768 ok=True verified=True
+2026-10-03T13:46:29 janitor started pid=2844 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-03T13:46:36 processing request 1790113485891-10768 devices=6
+2026-10-03T13:47:16 result 1790113485891-10768 ok=True verified=True
+2026-10-03T14:58:50 janitor started pid=2836 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-03T14:58:50 processing request 1790113485891-10768 devices=6
+2026-10-03T14:59:01 result 1790113485891-10768 ok=True verified=True
+2026-10-04T16:03:49 janitor started pid=2808 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-04T16:03:49 processing request 1790113485891-10768 devices=6
+2026-10-04T16:04:02 result 1790113485891-10768 ok=True verified=True
+2026-10-05T21:35:31 janitor started pid=2764 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-05T21:35:31 processing request 1790113485891-10768 devices=6
+2026-10-05T21:35:49 result 1790113485891-10768 ok=True verified=True
+2026-10-05T21:37:59 janitor started pid=2704 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-05T21:37:59 processing request 1790113485891-10768 devices=6
+2026-10-05T21:38:10 result 1790113485891-10768 ok=True verified=True
+2026-10-06T18:39:47 janitor started pid=2836 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-06T18:39:47 processing request 1790113485891-10768 devices=6
+2026-10-06T18:39:58 result 1790113485891-10768 ok=True verified=True
+2026-10-06T21:42:00 janitor started pid=2948 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-06T21:42:00 processing request 1790113485891-10768 devices=6
+2026-10-06T21:42:11 result 1790113485891-10768 ok=True verified=True
+2026-10-08T20:06:21 janitor started pid=2832 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-08T20:06:21 processing request 1790113485891-10768 devices=6
+2026-10-08T20:06:39 result 1790113485891-10768 ok=True verified=True
+2026-10-09T17:24:15 janitor started pid=2868 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-09T17:24:16 processing request 1790113485891-10768 devices=6
+2026-10-09T17:24:27 result 1790113485891-10768 ok=True verified=True
+2026-10-09T17:41:44 janitor started pid=2808 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-09T17:41:46 processing request 1790113485891-10768 devices=6
+2026-10-09T17:41:58 result 1790113485891-10768 ok=True verified=True
+2026-10-10T21:28:07 janitor started pid=2852 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-10T21:28:07 processing request 1790113485891-10768 devices=6
+2026-10-10T21:28:20 result 1790113485891-10768 ok=True verified=True
+2026-10-11T22:45:12 janitor started pid=2828 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-11T22:45:30 processing request 1790113485891-10768 devices=6
+2026-10-11T22:45:54 result 1790113485891-10768 ok=True verified=True
+2026-10-12T19:02:24 janitor started pid=2768 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-12T19:02:24 processing request 1790113485891-10768 devices=6
+2026-10-12T19:02:35 result 1790113485891-10768 ok=True verified=True
+2026-10-13T20:03:07 janitor started pid=2804 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-13T20:03:07 processing request 1790113485891-10768 devices=6
+2026-10-13T20:03:18 result 1790113485891-10768 ok=True verified=True
+2026-10-16T17:00:36 janitor started pid=4120 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-16T17:00:36 processing request 1790113485891-10768 devices=6
+2026-10-16T17:00:55 result 1790113485891-10768 ok=True verified=True
+2026-10-16T17:02:03 janitor started pid=3840 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-16T17:02:05 processing request 1790113485891-10768 devices=6
+2026-10-16T17:02:16 result 1790113485891-10768 ok=True verified=True
+2026-10-17T20:05:46 janitor started pid=2868 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-17T20:05:46 processing request 1790113485891-10768 devices=6
+2026-10-17T20:06:07 result 1790113485891-10768 ok=True verified=True
+2026-10-18T11:41:21 janitor started pid=2732 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-18T11:41:22 processing request 1790113485891-10768 devices=6
+2026-10-18T11:41:35 result 1790113485891-10768 ok=True verified=True
+2026-10-19T17:51:05 janitor started pid=2784 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-19T17:51:06 processing request 1790113485891-10768 devices=6
+2026-10-19T17:51:18 result 1790113485891-10768 ok=True verified=True
+2026-10-20T21:43:46 janitor started pid=2792 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-20T21:43:47 processing request 1790113485891-10768 devices=6
+2026-10-20T21:44:00 result 1790113485891-10768 ok=True verified=True
+2026-10-23T16:43:42 janitor started pid=2792 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-23T16:43:42 processing request 1790113485891-10768 devices=6
+2026-10-23T16:43:54 result 1790113485891-10768 ok=True verified=True
+2026-10-23T18:06:14 processing request 1792771574106-4704 devices=6
+2026-10-23T18:06:24 result 1792771574106-4704 ok=True verified=True
+2026-10-23T18:42:57 processing request 1792773777590-4704 devices=6
+2026-10-23T18:43:07 result 1792773777590-4704 ok=True verified=True
+2026-10-23T18:56:25 processing request 1792774584257-4704 devices=6
+2026-10-23T18:56:35 result 1792774584257-4704 ok=True verified=True
+2026-10-23T18:56:37 processing request 1792774596914-4704 devices=6
+2026-10-23T18:56:47 result 1792774596914-4704 ok=True verified=True
+2026-10-23T19:04:15 processing request 1792775054783-4704 devices=6
+2026-10-23T19:04:25 result 1792775054783-4704 ok=True verified=True
+2026-10-23T21:54:37 processing request 1792785277840-26240 devices=6
+2026-10-23T21:54:47 result 1792785277840-26240 ok=True verified=True
+2026-10-24T14:41:06 janitor started pid=2832 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-24T14:41:07 processing request 1792785277840-26240 devices=6
+2026-10-24T14:41:23 result 1792785277840-26240 ok=True verified=True
+2026-10-24T15:35:51 processing request 1792848951139-24024 devices=6
+2026-10-24T15:36:01 result 1792848951139-24024 ok=True verified=True
+2026-10-24T19:56:11 janitor started pid=2792 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-24T19:56:11 processing request 1792848951139-24024 devices=6
+2026-10-24T19:56:23 result 1792848951139-24024 ok=True verified=True
+2026-10-24T20:22:53 processing request 1792866173121-14556 devices=6
+2026-10-24T20:23:03 result 1792866173121-14556 ok=True verified=True
+2026-10-24T20:52:54 processing request 1792867974133-14556 devices=6
+2026-10-24T20:53:04 result 1792867974133-14556 ok=True verified=True
+2026-10-24T20:53:06 processing request 1792867986118-14556 devices=6
+2026-10-24T20:53:16 result 1792867986118-14556 ok=True verified=True
+2026-10-24T20:53:18 processing request 1792867997790-14556 devices=6
+2026-10-24T20:53:28 result 1792867997790-14556 ok=True verified=True
+2026-10-24T20:53:30 processing request 1792868009522-14556 devices=6
+2026-10-24T20:53:40 result 1792868009522-14556 ok=True verified=True
+2026-10-24T21:51:17 processing request 1792871475434-14556 devices=6
+2026-10-24T21:51:27 result 1792871475434-14556 ok=True verified=True
+2026-10-25T17:32:22 janitor started pid=2848 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-25T17:32:23 processing request 1792871475434-14556 devices=6
+2026-10-25T17:32:34 result 1792871475434-14556 ok=True verified=True
+2026-10-25T20:25:24 processing request 1792956323494-21156 devices=6
+2026-10-25T20:25:34 result 1792956323494-21156 ok=True verified=True
+2026-10-25T20:48:31 processing request 1792957710336-21156 devices=6
+2026-10-25T20:48:41 result 1792957710336-21156 ok=True verified=True
+2026-10-26T16:20:09 janitor started pid=2728 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-26T16:20:10 processing request 1792957710336-21156 devices=6
+2026-10-26T16:20:22 result 1792957710336-21156 ok=True verified=True
+2026-10-27T17:32:25 janitor started pid=2768 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-27T17:32:25 processing request 1792957710336-21156 devices=6
+2026-10-27T17:32:36 result 1792957710336-21156 ok=True verified=True
+2026-10-29T15:46:03 janitor started pid=2628 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-29T15:46:05 processing request 1792957710336-21156 devices=6
+2026-10-29T15:46:21 result 1792957710336-21156 ok=True verified=True
+2026-10-29T19:27:58 janitor started pid=2916 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-29T19:27:58 processing request 1792957710336-21156 devices=6
+2026-10-29T19:28:13 result 1792957710336-21156 ok=True verified=True
+2026-10-29T19:42:53 processing request 1793299372432-16372 devices=6
+2026-10-29T19:43:03 result 1793299372432-16372 ok=True verified=True
+2026-10-29T20:06:18 processing request 1793300778153-15136 devices=6
+2026-10-29T20:06:27 result 1793300778153-15136 ok=True verified=True
+2026-10-29T20:11:38 processing request 1793301098147-9252 devices=6
+2026-10-29T20:11:48 result 1793301098147-9252 ok=True verified=True
+2026-10-29T20:16:24 processing request 1793301384052-16372 devices=6
+2026-10-29T20:16:34 result 1793301384052-16372 ok=True verified=True
+2026-10-29T20:31:31 processing request 1793302290728-9280 devices=6
+2026-10-29T20:31:41 result 1793302290728-9280 ok=True verified=True
+2026-10-29T20:47:50 processing request 1793303268179-8456 devices=6
+2026-10-29T20:47:59 result 1793303268179-8456 ok=True verified=True
+2026-10-29T20:51:39 processing request 1793303497986-8456 devices=6
+2026-10-29T20:51:48 result 1793303497986-8456 ok=True verified=True
+2026-10-29T21:38:35 processing request 1793306315033-23012 devices=6
+2026-10-29T21:38:44 result 1793306315033-23012 ok=True verified=True
+2026-10-30T15:21:52 janitor started pid=2852 repo=C:\Leo projet\Assetto Corsa ai
+2026-10-30T15:21:52 processing request 1793306315033-23012 devices=6
+2026-10-30T15:22:03 result 1793306315033-23012 ok=True verified=True
+2026-10-30T17:46:52 processing request 1793378810680-30284 devices=6
+2026-10-30T17:47:02 result 1793378810680-30284 ok=True verified=True
+2026-11-01T15:38:05 janitor started pid=2780 repo=C:\Leo projet\Assetto Corsa ai
+2026-11-01T15:38:12 processing request 1793378810680-30284 devices=6
+2026-11-01T15:38:23 result 1793378810680-30284 ok=True verified=True
+2026-11-01T15:41:33 janitor started pid=2940 repo=C:\Leo projet\Assetto Corsa ai
+2026-11-01T15:41:33 processing request 1793378810680-30284 devices=6
+2026-11-01T15:41:45 result 1793378810680-30284 ok=True verified=True
+2026-11-01T19:12:09 janitor started pid=3068 repo=C:\Leo projet\Assetto Corsa ai
+2026-11-01T19:12:09 processing request 1793378810680-30284 devices=6
+2026-11-01T19:12:20 result 1793378810680-30284 ok=True verified=True
+2026-11-01T19:18:33 janitor started pid=2672 repo=C:\Leo projet\Assetto Corsa ai
+2026-11-01T19:18:33 processing request 1793378810680-30284 devices=6
+2026-11-01T19:18:44 result 1793378810680-30284 ok=True verified=True
+2026-11-01T19:25:12 janitor started pid=3004 repo=C:\Leo projet\Assetto Corsa ai
+2026-11-01T19:25:13 processing request 1793378810680-30284 devices=6
+2026-11-01T19:25:24 result 1793378810680-30284 ok=True verified=True
+2026-11-02T02:03:12 janitor started pid=3012 repo=C:\Leo projet\Assetto Corsa ai
+2026-11-02T02:03:12 processing request 1793378810680-30284 devices=6
+2026-11-02T02:03:27 result 1793378810680-30284 ok=True verified=True
+2026-11-02T13:29:19 janitor started pid=2872 repo=C:\Leo projet\Assetto Corsa ai
+2026-11-02T13:29:20 processing request 1793378810680-30284 devices=6
+2026-11-02T13:29:31 result 1793378810680-30284 ok=True verified=True
